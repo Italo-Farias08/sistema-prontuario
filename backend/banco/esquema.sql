@@ -67,13 +67,36 @@ CREATE TABLE IF NOT EXISTS usuarios (
   email             VARCHAR(255) NOT NULL UNIQUE,
   senha_hash        TEXT NOT NULL,
   paciente_id       UUID REFERENCES pacientes(id) ON DELETE CASCADE,
+  email_verificado  BOOLEAN NOT NULL DEFAULT false,
   criado_em         TIMESTAMPTZ NOT NULL DEFAULT now(),
 
   CONSTRAINT usuario_cliente_precisa_paciente
     CHECK (perfil <> 'cliente' OR paciente_id IS NOT NULL)
 );
 
+-- Garante a coluna também em bancos onde a tabela usuarios já existia
+-- antes desta atualização (torna a migração segura de rodar de novo).
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS email_verificado BOOLEAN NOT NULL DEFAULT false;
+
 CREATE INDEX IF NOT EXISTS idx_usuarios_paciente_id ON usuarios(paciente_id);
+
+-- ---------------------------------------------------------------------
+-- Tabela: codigos_verificacao
+-- Códigos de 6 dígitos enviados por e-mail (via Brevo) para confirmar
+-- o cadastro do cliente ou autorizar a redefinição de senha.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS codigos_verificacao (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email         VARCHAR(255) NOT NULL,
+  codigo        VARCHAR(6) NOT NULL,
+  tipo          VARCHAR(20) NOT NULL CHECK (tipo IN ('cadastro', 'redefinir_senha')),
+  tentativas    SMALLINT NOT NULL DEFAULT 0,
+  usado         BOOLEAN NOT NULL DEFAULT false,
+  expira_em     TIMESTAMPTZ NOT NULL,
+  criado_em     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_codigos_verificacao_email_tipo ON codigos_verificacao(email, tipo);
 
 -- ---------------------------------------------------------------------
 -- Tabela: medicacoes

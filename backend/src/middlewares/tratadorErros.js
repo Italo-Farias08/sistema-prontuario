@@ -4,7 +4,11 @@ function tratadorErros(erro, req, res, next) { // eslint-disable-line no-unused-
   const codigoStatus = erro.status || 500;
   const mensagem = erro.status ? erro.message : "Erro interno do servidor.";
 
-  res.status(codigoStatus).json({ erro: mensagem });
+  res.status(codigoStatus).json({
+    erro: mensagem,
+    ...(erro.codigo ? { codigo: erro.codigo } : {}),
+    ...(erro.email ? { email: erro.email } : {}),
+  });
 }
 
 function rotaNaoEncontrada(req, res) {

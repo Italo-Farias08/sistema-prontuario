@@ -5,6 +5,10 @@ import { cores, fontes } from "../tema/tema";
 import { useAutenticacao } from "../contexto/ContextoAutenticacao";
 
 import TelaLogin from "../telas/TelaLogin";
+import TelaCadastro from "../telas/TelaCadastro";
+import TelaVerificarCodigo from "../telas/TelaVerificarCodigo";
+import TelaEsqueciSenha from "../telas/TelaEsqueciSenha";
+import TelaRedefinirSenha from "../telas/TelaRedefinirSenha";
 import TelaInicioAdmin from "../telas/admin/TelaInicioAdmin";
 import TelaCadastroCliente from "../telas/admin/TelaCadastroCliente";
 import TelaProntuario from "../telas/admin/TelaProntuario";
@@ -30,7 +34,13 @@ export default function NavegadorPrincipal() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={screenOptions}>
         {!sessao ? (
-          <Stack.Screen name="Login" component={TelaLogin} options={{ headerShown: false }} />
+          <>
+            <Stack.Screen name="Login" component={TelaLogin} options={{ headerShown: false }} />
+            <Stack.Screen name="Cadastro" component={TelaCadastro} options={{ headerShown: false }} />
+            <Stack.Screen name="VerificarCadastro" component={TelaVerificarCodigo} options={{ headerShown: false }} />
+            <Stack.Screen name="EsqueciSenha" component={TelaEsqueciSenha} options={{ headerShown: false }} />
+            <Stack.Screen name="RedefinirSenha" component={TelaRedefinirSenha} options={{ headerShown: false }} />
+          </>
         ) : sessao.perfil === "admin" ? (
           <>
             <Stack.Screen name="InicioAdmin" component={TelaInicioAdmin} options={{ headerShown: false }} />

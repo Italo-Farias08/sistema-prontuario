@@ -21,7 +21,10 @@ async function requisicao(caminho, opcoes = {}) {
   const corpo = await resposta.json().catch(() => ({}));
 
   if (!resposta.ok) {
-    throw new Error(corpo.erro || "Não foi possível completar a operação.");
+    const erro = new Error(corpo.erro || "Não foi possível completar a operação.");
+    erro.codigo = corpo.codigo;
+    erro.email = corpo.email;
+    throw erro;
   }
 
   return corpo;
@@ -35,6 +38,48 @@ export async function autenticar({ perfil, identificador, senha }) {
 
   tokenAtual = sessao.token;
   return { perfil: sessao.perfil, idCliente: sessao.idCliente };
+}
+
+// ───── Cadastro do próprio paciente + verificação por e-mail ─────
+
+export async function cadastrarCliente(dados) {
+  return requisicao("/autenticacao/cadastrar", {
+    method: "POST",
+    body: JSON.stringify(dados),
+  });
+}
+
+export async function verificarCadastro({ email, codigo }) {
+  const sessao = await requisicao("/autenticacao/verificar-cadastro", {
+    method: "POST",
+    body: JSON.stringify({ email, codigo }),
+  });
+
+  tokenAtual = sessao.token;
+  return { perfil: sessao.perfil, idCliente: sessao.idCliente };
+}
+
+export async function reenviarCodigo({ email, tipo }) {
+  return requisicao("/autenticacao/reenviar-codigo", {
+    method: "POST",
+    body: JSON.stringify({ email, tipo }),
+  });
+}
+
+// ───── Esqueci minha senha ─────
+
+export async function solicitarRedefinicaoSenha({ identificador }) {
+  return requisicao("/autenticacao/esqueci-senha", {
+    method: "POST",
+    body: JSON.stringify({ identificador }),
+  });
+}
+
+export async function redefinirSenha({ email, codigo, novaSenha }) {
+  return requisicao("/autenticacao/redefinir-senha", {
+    method: "POST",
+    body: JSON.stringify({ email, codigo, novaSenha }),
+  });
 }
 
 export async function listarClientes() {

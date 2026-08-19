@@ -18,7 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { fontes, espacamento } from "../tema/tema";
 import { useAutenticacao } from "../contexto/ContextoAutenticacao";
-import { autenticar } from "../servicos/dadosServico";
+import { autenticar, reenviarCodigo } from "../servicos/dadosServico";
 
 // ─────────────────────────────────────────────────────────────
 // Paleta exclusiva desta tela (não altera src/tema/tema.js).
@@ -57,7 +57,7 @@ const PONTOS_DECORATIVOS = [
   { top: 62, left: 38, size: 6, opacity: 0.55 },
 ];
 
-export default function TelaLogin() {
+export default function TelaLogin({ navigation }) {
   const { entrar } = useAutenticacao();
   const [identificador, setIdentificador] = useState("");
   const [senha, setSenha] = useState("");
@@ -103,6 +103,18 @@ export default function TelaLogin() {
       });
       entrar(result);
     } catch (e) {
+      if (e.codigo === "EMAIL_NAO_VERIFICADO" && e.email) {
+        // A senha está certa, só falta confirmar o e-mail. Já reenvia um
+        // código novo (o cadastro pode ter sido há um tempo) e leva a
+        // pessoa direto pra tela de confirmação.
+        try {
+          await reenviarCodigo({ email: e.email, tipo: "cadastro" });
+        } catch (_) {
+          // Se o reenvio falhar, a pessoa ainda pode pedir "Reenviar código" na própria tela.
+        }
+        navigation.navigate("VerificarCadastro", { email: e.email });
+        return;
+      }
       setErro(e.message || "Não foi possível entrar.");
     } finally {
       setLoading(false);
@@ -110,7 +122,7 @@ export default function TelaLogin() {
   }
 
   function handleCadastro() {
-    Alert.alert("Criar conta", "Esse fluxo ainda será implementado.");
+    navigation.navigate("Cadastro");
   }
 
   return (
@@ -232,12 +244,7 @@ export default function TelaLogin() {
             </Pressable>
 
             <Pressable
-              onPress={() =>
-                Alert.alert(
-                  "Recuperar senha",
-                  "Esse fluxo ainda será implementado."
-                )
-              }
+              onPress={() => navigation.navigate("EsqueciSenha")}
               hitSlop={8}
             >
               <Text style={styles.esqueci}>Esqueci minha senha</Text>

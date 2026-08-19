@@ -98,3 +98,7 @@ WHERE cpf = '987.654.321-00';
 -- Usuário administrador (médico/consultório)
 INSERT INTO usuarios (perfil, email, senha_hash, paciente_id)
 VALUES ('admin', 'admin@clinica.com', crypt('123456', gen_salt('bf')), NULL);
+
+-- Usuários de exemplo já nascem com e-mail verificado (não passaram
+-- pelo fluxo real de cadastro por e-mail).
+UPDATE usuarios SET email_verificado = true;
