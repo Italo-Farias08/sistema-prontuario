@@ -22,18 +22,20 @@ import { autenticar } from "../servicos/dadosServico";
 
 // ─────────────────────────────────────────────────────────────
 // Paleta exclusiva desta tela (não altera src/tema/tema.js).
-// Fundo off-white, verde da marca (#3DB843) e grafite pro texto —
-// baseada na referência visual passada pelo cliente.
+// Fundo neutro em tons de cinza + verde da marca como toque de
+// destaque — baseada na referência visual passada pelo cliente.
 // ─────────────────────────────────────────────────────────────
 const cores = {
-  fundo: "#F2F1EC",
+  fundo: "#F3F2EE",
   superficie: "#FFFFFF",
-  campoFundo: "#F6F5F1",
-  borda: "#E4E2DC",
+  campoFundo: "#FFFFFF",
+  borda: "#E7E5DF",
   bordaFoco: "#3DB843",
   destaque: "#3DB843",
   destaqueEscuro: "#2E6B34",
   destaqueSuave: "#E7F3E8",
+  neutro: "#DEDCD5",
+  neutroForte: "#CFCDC5",
   texto: "#2B2B2B",
   textoSecundario: "#6E6E6E",
   textoTerciario: "#A3A19A",
@@ -43,7 +45,7 @@ const cores = {
 
 const PERFIL_PADRAO = "cliente";
 
-// Posições dos pontinhos decorativos (canto inferior direito).
+// Posições dos pontinhos decorativos.
 // Gerado uma vez fora do componente pra não recalcular a cada render.
 const PONTOS_DECORATIVOS = [
   { top: 0, left: 26, size: 7, opacity: 0.75 },
@@ -119,26 +121,14 @@ export default function TelaLogin() {
       <StatusBar style="dark" />
 
       {/* ───── Camada decorativa de fundo ─────
+          Tons neutros de cinza (como na referência), com um único
+          respiro de verde no canto inferior direito.
           Tudo com pointerEvents="none" pra não atrapalhar o toque. */}
       <View pointerEvents="none" style={styles.blobTopoEsquerda} />
-      <View pointerEvents="none" style={styles.blobTopoDireita} />
-      <View pointerEvents="none" style={styles.blobBase} />
+      <View pointerEvents="none" style={styles.anelTopoDireita} />
 
-      {/* Traço diagonal fino cruzando o canto superior direito */}
-      <View pointerEvents="none" style={styles.tracoDiagonal} />
-
-      {/* Colchetes decorativos nos cantos, ecoando as linhas da logo */}
-      <View
-        pointerEvents="none"
-        style={[styles.colchete, styles.colcheteTopoEsquerda]}
-      />
-      <View
-        pointerEvents="none"
-        style={[styles.colchete, styles.colcheteBaseDireita]}
-      />
-
-      {/* Pontilhado orgânico no canto inferior direito */}
-      <View pointerEvents="none" style={styles.pontosWrap}>
+      {/* Pontilhado cinza no canto superior direito */}
+      <View pointerEvents="none" style={styles.pontosTopoDireita}>
         {PONTOS_DECORATIVOS.map((p, i) => (
           <View
             key={i}
@@ -149,12 +139,36 @@ export default function TelaLogin() {
               width: p.size,
               height: p.size,
               borderRadius: p.size,
-              backgroundColor: cores.destaque,
+              backgroundColor: cores.neutroForte,
               opacity: p.opacity,
             }}
           />
         ))}
       </View>
+
+      {/* Pontilhado cinza no canto inferior esquerdo */}
+      <View pointerEvents="none" style={styles.pontosBaseEsquerda}>
+        {PONTOS_DECORATIVOS.map((p, i) => (
+          <View
+            key={i}
+            style={{
+              position: "absolute",
+              top: p.top,
+              left: p.left,
+              width: p.size,
+              height: p.size,
+              borderRadius: p.size,
+              backgroundColor: cores.neutroForte,
+              opacity: p.opacity,
+            }}
+          />
+        ))}
+      </View>
+
+      {/* Dupla de círculos cortados no canto inferior direito
+          (cinza atrás, verde suave na frente), como na referência */}
+      <View pointerEvents="none" style={styles.blobBaseDireitaCinza} />
+      <View pointerEvents="none" style={styles.blobBaseDireitaVerde} />
 
       <ScrollView
         contentContainerStyle={styles.container}
@@ -261,8 +275,8 @@ export default function TelaLogin() {
 
 // ─────────────────────────────────────────────────────────────
 // Input local (não altera src/componentes/CampoTexto.js)
-// Visual mais próximo da referência: caixa preenchida (sem borda
-// visível), ícone dentro de um "selo" arredondado à esquerda.
+// Caixa branca com borda sutil e sombra leve, ícone dentro de um
+// "selo" cinza claro à esquerda.
 // ─────────────────────────────────────────────────────────────
 function CampoEstilizado({
   value,
@@ -360,76 +374,60 @@ function BotaoEstilizado({ label, onPress, loading }) {
 const styles = StyleSheet.create({
   blobTopoEsquerda: {
     position: "absolute",
-    top: -70,
-    left: -80,
+    top: -90,
+    left: -90,
+    width: 260,
+    height: 260,
+    borderRadius: 260,
+    backgroundColor: cores.neutro,
+    opacity: 0.7,
+  },
+  anelTopoDireita: {
+    position: "absolute",
+    top: 60,
+    right: -70,
+    width: 160,
+    height: 160,
+    borderRadius: 160,
+    borderWidth: 1.5,
+    borderColor: cores.neutroForte,
+    opacity: 0.9,
+  },
+
+  pontosTopoDireita: {
+    position: "absolute",
+    top: 34,
+    right: 28,
+    width: 70,
+    height: 70,
+  },
+  pontosBaseEsquerda: {
+    position: "absolute",
+    bottom: 130,
+    left: 20,
+    width: 70,
+    height: 70,
+  },
+
+  blobBaseDireitaCinza: {
+    position: "absolute",
+    bottom: -90,
+    right: -70,
     width: 220,
     height: 220,
     borderRadius: 220,
-    backgroundColor: cores.destaque,
-    opacity: 0.22,
+    backgroundColor: cores.neutro,
+    opacity: 0.7,
   },
-  blobTopoDireita: {
-    position: "absolute",
-    top: 40,
-    right: -90,
-    width: 180,
-    height: 180,
-    borderRadius: 180,
-    borderWidth: 34,
-    borderColor: cores.destaque,
-    opacity: 0.2,
-  },
-  blobBase: {
+  blobBaseDireitaVerde: {
     position: "absolute",
     bottom: -120,
-    left: -60,
-    right: -60,
-    height: 200,
-    backgroundColor: cores.destaque,
-    opacity: 0.2,
-    borderTopLeftRadius: 400,
-    borderTopRightRadius: 400,
-  },
-
-  tracoDiagonal: {
-    position: "absolute",
-    top: 26,
-    right: -40,
-    width: 160,
-    height: 2,
-    backgroundColor: cores.destaqueEscuro,
-    opacity: 0.35,
-    transform: [{ rotate: "-38deg" }],
-  },
-
-  colchete: {
-    position: "absolute",
-    width: 34,
-    height: 34,
-    borderColor: cores.destaqueEscuro,
-    opacity: 0.5,
-  },
-  colcheteTopoEsquerda: {
-    top: 18,
-    left: 18,
-    borderTopWidth: 2,
-    borderLeftWidth: 2,
-    borderTopLeftRadius: 8,
-  },
-  colcheteBaseDireita: {
-    bottom: 22,
-    right: 18,
-    borderBottomWidth: 2,
-    borderRightWidth: 2,
-    borderBottomRightRadius: 8,
-  },
-
-  pontosWrap: {
-    position: "absolute",
-    bottom: 90,
-    right: 24,
-    width: 70,
-    height: 70,
+    right: -110,
+    width: 220,
+    height: 220,
+    borderRadius: 220,
+    backgroundColor: cores.destaqueSuave,
+    opacity: 0.8,
   },
 
   container: {
@@ -490,22 +488,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: cores.campoFundo,
     borderWidth: 1,
-    borderColor: cores.campoFundo,
+    borderColor: cores.borda,
     borderRadius: 16,
     paddingRight: 6,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   campoWrapFoco: {
     borderColor: cores.bordaFoco,
     backgroundColor: cores.superficie,
     shadowColor: cores.destaque,
-    shadowOpacity: 0.16,
+    shadowOpacity: 0.18,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 3,
   },
   campoIconeSelo: {
     width: 44,
@@ -513,7 +511,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: cores.superficie,
+    backgroundColor: cores.fundo,
     marginLeft: 6,
     marginRight: 10,
   },
