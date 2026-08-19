@@ -1,9 +1,4 @@
-// Aplica o esquema (banco/esquema.sql) no banco apontado por DATABASE_URL.
-// Use --com-exemplos para também inserir os dados de exemplo.
-//
-// Uso:
-//   npm run migrar
-//   npm run migrar -- --com-exemplos
+
 
 const fs = require("fs");
 const path = require("path");
