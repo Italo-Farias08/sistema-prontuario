@@ -1,12 +1,16 @@
-// Camada de acesso a dados. Fala com o backend real (Express + PostgreSQL)
-// via fetch. Mantém as mesmas funções e formatos de retorno que as telas
-// já usavam quando os dados vinham do mock — nenhuma tela precisou mudar
-// a forma como chama este arquivo.
-
 import { URL_BASE_API } from "../configuracao/api";
 
-// Token da sessão atual, guardado em memória (perdido ao reiniciar o app).
 let tokenAtual = null;
+
+export function definirToken(token) {
+  tokenAtual = token;
+}
+
+let aoSessaoExpirar = null;
+
+export function registrarAoSessaoExpirar(callback) {
+  aoSessaoExpirar = callback;
+}
 
 async function requisicao(caminho, opcoes = {}) {
   const resposta = await fetch(`${URL_BASE_API}${caminho}`, {
@@ -21,6 +25,10 @@ async function requisicao(caminho, opcoes = {}) {
   const corpo = await resposta.json().catch(() => ({}));
 
   if (!resposta.ok) {
+    if (resposta.status === 401 && tokenAtual) {
+      tokenAtual = null;
+      aoSessaoExpirar?.();
+    }
     const erro = new Error(corpo.erro || "Não foi possível completar a operação.");
     erro.codigo = corpo.codigo;
     erro.email = corpo.email;
@@ -37,10 +45,8 @@ export async function autenticar({ perfil, identificador, senha }) {
   });
 
   tokenAtual = sessao.token;
-  return { perfil: sessao.perfil, idCliente: sessao.idCliente };
+  return { perfil: sessao.perfil, idCliente: sessao.idCliente, token: sessao.token };
 }
-
-// ───── Cadastro do próprio paciente + verificação por e-mail ─────
 
 export async function cadastrarCliente(dados) {
   return requisicao("/autenticacao/cadastrar", {
@@ -56,7 +62,7 @@ export async function verificarCadastro({ email, codigo }) {
   });
 
   tokenAtual = sessao.token;
-  return { perfil: sessao.perfil, idCliente: sessao.idCliente };
+  return { perfil: sessao.perfil, idCliente: sessao.idCliente, token: sessao.token };
 }
 
 export async function reenviarCodigo({ email, tipo }) {
@@ -65,8 +71,6 @@ export async function reenviarCodigo({ email, tipo }) {
     body: JSON.stringify({ email, tipo }),
   });
 }
-
-// ───── Esqueci minha senha ─────
 
 export async function solicitarRedefinicaoSenha({ identificador }) {
   return requisicao("/autenticacao/esqueci-senha", {
@@ -104,10 +108,10 @@ export async function atualizarCliente(id, alteracoes) {
   });
 }
 
-export async function registrarCheckin(id, { humor, sono, energia, apetite }) {
+export async function registrarCheckin(id, { humor, sono, energia, apetite, ansiedade }) {
   return requisicao(`/pacientes/${id}/checkins`, {
     method: "POST",
-    body: JSON.stringify({ humor, sono, energia, apetite }),
+    body: JSON.stringify({ humor, sono, energia, apetite, ansiedade }),
   });
 }
 

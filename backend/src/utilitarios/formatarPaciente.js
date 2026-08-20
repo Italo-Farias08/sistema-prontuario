@@ -76,6 +76,7 @@ function formatarPaciente(linhaPaciente, medicacoes = [], checkins = []) {
       apetite: c.apetite,
       humor: c.humor,
       energia: c.energia,
+      ansiedade: c.ansiedade,
     })),
 
     atualizadoEm: formatarData(linhaPaciente.atualizado_em),

@@ -1,4 +1,5 @@
 import React from "react";
+import { View, ActivityIndicator } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { cores, fontes } from "../tema/tema";
@@ -28,7 +29,15 @@ const screenOptions = {
 };
 
 export default function NavegadorPrincipal() {
-  const { sessao } = useAutenticacao();
+  const { sessao, restaurandoSessao } = useAutenticacao();
+
+  if (restaurandoSessao) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: cores.fundo }}>
+        <ActivityIndicator size="large" color={cores.destaque} />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>

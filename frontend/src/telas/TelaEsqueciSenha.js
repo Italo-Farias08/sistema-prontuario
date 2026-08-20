@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   marca: { alignItems: "center", marginBottom: espacamento.grande },
-  marcaLogo: { width: 140, height: 60 },
+  marcaLogo: { width: 240, height: 120, margin: 0, },
   titulo: {
     fontFamily: fontes.tituloNegrito,
     fontSize: 22,

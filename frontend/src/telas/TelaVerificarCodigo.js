@@ -7,9 +7,6 @@ import { verificarCadastro, reenviarCodigo } from "../servicos/dadosServico";
 import { useAutenticacao } from "../contexto/ContextoAutenticacao";
 import CampoCodigo from "../componentes/CampoCodigo";
 
-// Tela usada para confirmar o e-mail logo após o cadastro. Ao verificar
-// com sucesso, o próprio backend já devolve uma sessão válida — então
-// a pessoa entra direto no app, sem precisar fazer login de novo.
 export default function TelaVerificarCodigo({ route }) {
   const { email } = route.params || {};
   const { entrar } = useAutenticacao();

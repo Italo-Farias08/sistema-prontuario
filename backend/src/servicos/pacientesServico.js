@@ -224,11 +224,25 @@ async function atualizarPaciente(id, alteracoes) {
   }
 }
 
-async function registrarCheckin(idPaciente, { humor, sono, energia, apetite }) {
+/**
+ * Registra (ou completa) o check-in do paciente NO DIA DE HOJE.
+ * Como o app agora manda o check-in em duas etapas — o toque rápido
+ * de humor e, depois, os sliders de ansiedade/humor/energia — usamos
+ * UPSERT por (paciente_id, data): a segunda chamada do dia atualiza
+ * a mesma linha em vez de criar outra, e cada campo só é sobrescrito
+ * quando vem um valor novo (COALESCE mantém o que já estava salvo).
+ */
+async function registrarCheckin(idPaciente, { humor, sono, energia, apetite, ansiedade }) {
   await bancoDados.query(
-    `INSERT INTO checkins (paciente_id, humor, sono, energia, apetite)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [idPaciente, humor ?? null, sono ?? null, energia ?? null, apetite ?? null]
+    `INSERT INTO checkins (paciente_id, data, humor, sono, energia, apetite, ansiedade)
+     VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6)
+     ON CONFLICT (paciente_id, data) DO UPDATE SET
+       humor = COALESCE(EXCLUDED.humor, checkins.humor),
+       sono = COALESCE(EXCLUDED.sono, checkins.sono),
+       energia = COALESCE(EXCLUDED.energia, checkins.energia),
+       apetite = COALESCE(EXCLUDED.apetite, checkins.apetite),
+       ansiedade = COALESCE(EXCLUDED.ansiedade, checkins.ansiedade)`,
+    [idPaciente, humor ?? null, sono ?? null, energia ?? null, apetite ?? null, ansiedade ?? null]
   );
   return buscarPacientePorId(idPaciente);
 }

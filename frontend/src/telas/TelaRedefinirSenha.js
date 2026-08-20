@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     paddingBottom: espacamento.enorme,
   },
   marca: { alignItems: "center", marginBottom: espacamento.medio },
-  marcaLogo: { width: 140, height: 60 },
+  marcaLogo: { width: 200, height: 130, },
   titulo: {
     fontFamily: fontes.tituloNegrito,
     fontSize: 22,

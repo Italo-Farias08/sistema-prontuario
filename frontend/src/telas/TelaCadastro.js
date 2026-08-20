@@ -3,10 +3,14 @@ import { View, ScrollView, StyleSheet, Alert, Text, Image, Pressable } from "rea
 import { Ionicons } from "@expo/vector-icons";
 import { cores, fontes, espacamento, raio, sombra } from "../tema/tema";
 import CampoTexto from "../componentes/CampoTexto";
+import CampoData from "../componentes/CampoData";
+import SeletorPills from "../componentes/SeletorPills";
 import Botao from "../componentes/Botao";
 import TituloSecao from "../componentes/TituloSecao";
 import Cartao from "../componentes/Cartao";
 import { cadastrarCliente } from "../servicos/dadosServico";
+
+const OPCOES_SEXO = ["Feminino", "Masculino", "Outro"];
 
 const FORM_VAZIO = {
   nome: "",
@@ -93,9 +97,18 @@ export default function TelaCadastro({ navigation }) {
       <Cartao style={{ marginTop: espacamento.grande, marginBottom: espacamento.grande }}>
         <TituloSecao title="Seus dados" icon="person-outline" />
         <CampoTexto label="Nome completo" required value={form.nome} onChangeText={(v) => set("nome", v)} placeholder="Seu nome completo" />
-        <CampoTexto label="Sexo" value={form.sexo} onChangeText={(v) => set("sexo", v)} placeholder="Feminino / Masculino / Outro" />
+        <SeletorPills
+          label="Sexo"
+          options={OPCOES_SEXO}
+          value={form.sexo}
+          onChange={(v) => set("sexo", v)}
+        />
+        <CampoData
+          label="Data de nascimento"
+          value={form.dataNascimento}
+          onChangeText={(v) => set("dataNascimento", v)}
+        />
         <CampoTexto label="Idade" value={form.idade} onChangeText={(v) => set("idade", v)} placeholder="Ex: 34" keyboardType="number-pad" />
-        <CampoTexto label="Data de nascimento" value={form.dataNascimento} onChangeText={(v) => set("dataNascimento", v)} placeholder="DD/MM/AAAA" />
         <CampoTexto label="Telefone" value={form.telefone} onChangeText={(v) => set("telefone", v)} placeholder="(00) 00000-0000" keyboardType="phone-pad" />
         <CampoTexto label="Contato de emergência" value={form.contatoEmergencia} onChangeText={(v) => set("contatoEmergencia", v)} placeholder="Nome - Telefone" />
         <CampoTexto label="CPF" value={form.cpf} onChangeText={(v) => set("cpf", v)} placeholder="000.000.000-00" keyboardType="number-pad" />
@@ -127,16 +140,17 @@ export default function TelaCadastro({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: espacamento.grande,
-    paddingTop: espacamento.grande,
+    paddingTop: espacamento.enorme,
     paddingBottom: espacamento.enorme,
   },
   marca: {
     alignItems: "center",
-    marginBottom: espacamento.medio,
+    marginTop: espacamento.medio,
+    marginBottom: espacamento.grande,
   },
   marcaLogo: {
-    width: 140,
-    height: 60,
+    width: 180,
+    height: 80,
   },
   titulo: {
     fontFamily: fontes.tituloNegrito,
