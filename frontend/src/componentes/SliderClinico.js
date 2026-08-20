@@ -1,12 +1,15 @@
-import React, { useRef, useState } from "react";
-import { View, Text, StyleSheet, PanResponder } from "react-native";
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import Slider from "@react-native-community/slider";
 import { cores, fontes, raio, espacamento } from "../tema/tema";
 
 /**
- * Slider de 0 a 10 (passo inteiro), feito com PanResponder puro —
- * o projeto não tem @react-native-community/slider instalado e,
- * neste ambiente, não dá pra rodar `npm install`. Isso evita
- * depender de uma lib nativa que precisaria de rebuild.
+ * Slider de 0 a 10 (passo inteiro). Antes era feito na mão com
+ * PanResponder — mas dentro do ScrollView da tela ele ficava travado
+ * (o ScrollView tomava o gesto de volta no meio do arrasto, e nenhum
+ * ajuste de PanResponder resolvia de forma confiável). Trocado pelo
+ * componente nativo @react-native-community/slider, que trata o toque
+ * no nível do sistema operacional e não sofre esse tipo de disputa.
  *
  * Extremos podem ser um emoji (ex.: 😞 / 😄) ou um número simples
  * (quando `emojiEsquerda`/`emojiDireita` não são passados, mostra
@@ -21,57 +24,30 @@ export default function SliderClinico({
   max = 10,
   emojiEsquerda,
   emojiDireita,
+  sufixoValor,
 }) {
-  const [largura, setLargura] = useState(0);
-  const intervalo = max - min;
-
-  function posicaoParaValor(x) {
-    if (!largura) return value;
-    const proporcao = Math.min(Math.max(x / largura, 0), 1);
-    return Math.round(min + proporcao * intervalo);
-  }
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderMove: (evt) => {
-        onChange(posicaoParaValor(evt.nativeEvent.locationX));
-      },
-      onPanResponderRelease: (evt) => {
-        const novoValor = posicaoParaValor(evt.nativeEvent.locationX);
-        onChange(novoValor);
-        onSlidingComplete && onSlidingComplete(novoValor);
-      },
-    })
-  ).current;
-
-  const proporcaoAtual = largura ? ((value - min) / intervalo) * largura : 0;
-
   return (
     <View style={{ marginBottom: espacamento.grande }}>
       <View style={styles.headerRow}>
         <Text style={styles.label}>{label}</Text>
-        <Text style={styles.valor}>{value}</Text>
+        <Text style={styles.valor}>{value}{sufixoValor || ""}</Text>
       </View>
 
       <View style={styles.linha}>
         <Text style={styles.extremo}>{emojiEsquerda ?? min}</Text>
 
-        <View
-          style={styles.trilha}
-          onLayout={(e) => setLargura(e.nativeEvent.layout.width)}
-          {...panResponder.panHandlers}
-        >
-          <View style={styles.trilhaBase} />
-          <View style={[styles.trilhaPreenchida, { width: proporcaoAtual }]} />
-          <View
-            style={[
-              styles.thumb,
-              { left: Math.max(Math.min(proporcaoAtual - 11, largura - 22), 0) },
-            ]}
-          />
-        </View>
+        <Slider
+          style={styles.slider}
+          minimumValue={min}
+          maximumValue={max}
+          step={1}
+          value={value}
+          onValueChange={onChange}
+          onSlidingComplete={onSlidingComplete}
+          minimumTrackTintColor={cores.destaque}
+          maximumTrackTintColor={cores.borda}
+          thumbTintColor={cores.destaque}
+        />
 
         <Text style={styles.extremo}>{emojiDireita ?? max}</Text>
       </View>
@@ -109,39 +85,9 @@ const styles = StyleSheet.create({
     color: cores.textoClaro,
     fontFamily: fontes.texto,
   },
-  trilha: {
+  slider: {
     flex: 1,
     height: 32,
-    justifyContent: "center",
     marginHorizontal: 8,
-  },
-  trilhaBase: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    height: 4,
-    borderRadius: raio.pilula,
-    backgroundColor: cores.borda,
-  },
-  trilhaPreenchida: {
-    position: "absolute",
-    left: 0,
-    height: 4,
-    borderRadius: raio.pilula,
-    backgroundColor: cores.destaque,
-  },
-  thumb: {
-    position: "absolute",
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: cores.branco,
-    borderWidth: 2,
-    borderColor: cores.destaque,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 2,
   },
 });
