@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
+  Image,
   ScrollView,
   StyleSheet,
   Pressable,
@@ -10,51 +11,53 @@ import {
   Alert,
   Animated,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { cores, fontes, raio, espacamento, sombra } from "../../tema/tema";
 import Cartao from "../../componentes/Cartao";
 import Avatar from "../../componentes/Avatar";
 import MenuLateral from "../../componentes/MenuLateral";
-import SliderClinico from "../../componentes/SliderClinico";
+import CheckinDiario from "../../componentes/CheckinDiario";
+import TendenciaSemana from "../../componentes/TendenciaSemana";
+import TituloSecao from "../../componentes/TituloSecao";
 import { buscarClientePorId, registrarCheckin as registrarCheckinApi } from "../../servicos/dadosServico";
 import { useAutenticacao } from "../../contexto/ContextoAutenticacao";
 import { WHATSAPP_DOUTOR } from "../../dados/dadosMock";
 
-const OPCOES_HUMOR = [
-  { emoji: "😥", label: "Muito mal", valor: 0 },
-  { emoji: "🙁", label: "Mal", valor: 25 },
-  { emoji: "😐", label: "Neutro", valor: 50 },
-  { emoji: "🙂", label: "Feliz", valor: 75 },
-  { emoji: "😄", label: "Muito feliz", valor: 100 },
-];
-
 function saudacaoPorHorario() {
   const hora = new Date().getHours();
-  if (hora < 5) return "Boa madrugada,";
-  if (hora < 12) return "Bom dia,";
-  if (hora < 18) return "Boa tarde,";
-  return "Boa noite,";
-}
-
-function hojeCurto() {
-  const hoje = new Date();
-  return `${String(hoje.getDate()).padStart(2, "0")}/${String(hoje.getMonth() + 1).padStart(2, "0")}`;
+  if (hora < 5) return "Boa madrugada";
+  if (hora < 12) return "Bom dia";
+  if (hora < 18) return "Boa tarde";
+  return "Boa noite";
 }
 
 export default function TelaInicioCliente({ navigation }) {
   const { sessao, sair } = useAutenticacao();
+  const insets = useSafeAreaInsets();
   const [cliente, setCliente] = useState(null);
   const [menuAberto, setMenuAberto] = useState(false);
-  const [enviandoHumor, setEnviandoHumor] = useState(false);
-  const [disposicao, setDisposicao] = useState(5);
-  const [disposicaoInicializada, setDisposicaoInicializada] = useState(false);
-  const [salvandoDisposicao, setSalvandoDisposicao] = useState(false);
+  const [carregando, setCarregando] = useState(true);
+  const [erroCarregar, setErroCarregar] = useState(false);
 
   const opacidade = useRef(new Animated.Value(0)).current;
   const deslocamento = useRef(new Animated.Value(14)).current;
 
+  async function carregarCliente() {
+    try {
+      setErroCarregar(false);
+      const dados = await buscarClientePorId(sessao.idCliente);
+      setCliente(dados);
+    } catch (e) {
+      setErroCarregar(true);
+    } finally {
+      setCarregando(false);
+    }
+  }
+
   useEffect(() => {
-    buscarClientePorId(sessao.idCliente).then(setCliente);
+    carregarCliente();
   }, [sessao.idCliente]);
 
   useEffect(() => {
@@ -66,42 +69,20 @@ export default function TelaInicioCliente({ navigation }) {
     }
   }, [cliente]);
 
-  const checkinHoje = useMemo(
-    () => cliente?.checkins?.find((c) => c.data === hojeCurto()) || null,
-    [cliente]
-  );
-
-  useEffect(() => {
-    if (checkinHoje?.energia != null && !disposicaoInicializada) {
-      setDisposicao(Math.round(checkinHoje.energia / 10));
-      setDisposicaoInicializada(true);
-    }
-  }, [checkinHoje, disposicaoInicializada]);
-
-  async function registrarHumor(opcao) {
-    if (enviandoHumor) return;
-    setEnviandoHumor(true);
-    try {
-      const clienteAtualizado = await registrarCheckinApi(sessao.idCliente, { humor: opcao.valor });
-      setCliente(clienteAtualizado);
-    } catch (e) {
-      Alert.alert("Ops", e.message || "Não foi possível registrar seu humor agora.");
-    } finally {
-      setEnviandoHumor(false);
-    }
+  // O CheckinDiario manda humor já em 0-100 (toque rápido) ou os três
+  // sliders em escala 0-10 (indicadores). O backend espera tudo em 0-100.
+  async function aoRegistrarRapido(valorHumor) {
+    const clienteAtualizado = await registrarCheckinApi(sessao.idCliente, { humor: valorHumor });
+    setCliente(clienteAtualizado);
   }
 
-  async function registrarDisposicao() {
-    if (salvandoDisposicao) return;
-    setSalvandoDisposicao(true);
-    try {
-      const clienteAtualizado = await registrarCheckinApi(sessao.idCliente, { energia: disposicao * 10 });
-      setCliente(clienteAtualizado);
-    } catch (e) {
-      Alert.alert("Ops", e.message || "Não foi possível registrar sua disposição agora.");
-    } finally {
-      setSalvandoDisposicao(false);
-    }
+  async function aoRegistrarIndicadores({ ansiedade, humor, energia }) {
+    const clienteAtualizado = await registrarCheckinApi(sessao.idCliente, {
+      ansiedade: ansiedade * 10,
+      humor: humor * 10,
+      energia: energia * 10,
+    });
+    setCliente(clienteAtualizado);
   }
 
   function agendarConsulta() {
@@ -114,11 +95,23 @@ export default function TelaInicioCliente({ navigation }) {
     );
   }
 
-  if (!cliente) {
+  if (carregando) {
     return (
-      <View style={styles.loading}>
+      <View style={[styles.loading, { paddingTop: insets.top }]}>
         <ActivityIndicator color={cores.destaque} />
         <Text style={styles.loadingTexto}>Carregando suas informações...</Text>
+      </View>
+    );
+  }
+
+  if (erroCarregar || !cliente) {
+    return (
+      <View style={[styles.loading, { paddingTop: insets.top }]}>
+        <Ionicons name="cloud-offline-outline" size={32} color={cores.textoClaro} />
+        <Text style={styles.loadingTexto}>Não foi possível carregar seus dados agora.</Text>
+        <Pressable onPress={carregarCliente} style={styles.tentarNovamenteBtn}>
+          <Text style={styles.tentarNovamenteTexto}>Tentar novamente</Text>
+        </Pressable>
       </View>
     );
   }
@@ -129,141 +122,122 @@ export default function TelaInicioCliente({ navigation }) {
     <View style={{ flex: 1, backgroundColor: cores.fundo }}>
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={{ paddingBottom: insets.bottom + espacamento.gigante }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Cabeçalho: avatar + saudação/nome à esquerda, sino à direita */}
-        <View style={styles.header}>
-          <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-            <Avatar iniciais={cliente?.fotoIniciais} size={48} />
-            <View style={{ marginLeft: espacamento.medio, flex: 1 }}>
-              <Text style={styles.saudacaoNome} numberOfLines={1}>
-                {saudacaoPorHorario()} {primeiroNome}
-              </Text>
-              <Text style={styles.subtitulo}>Como você está hoje?</Text>
-            </View>
-          </View>
-          <Pressable
-            onPress={() => Alert.alert("Notificações", "Nenhuma notificação nova por enquanto.")}
-            style={styles.sinoBtn}
-            hitSlop={8}
-          >
-            <Ionicons name="notifications-outline" size={20} color={cores.destaqueEscuro} />
-          </Pressable>
-        </View>
-
-        <Animated.View
-          style={{
-            opacity: opacidade,
-            transform: [{ translateY: deslocamento }],
-          }}
+        {/* Faixa de marca — logo + avatar/saudação, com curva na base */}
+        <LinearGradient
+          colors={cores.gradientePrincipal}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.heroBand, { paddingTop: insets.top + espacamento.medio }]}
         >
-          {/* Cartão de resumo com CTA de agendar consulta */}
-          <Cartao style={styles.cartaoResumo}>
-            <View style={styles.resumoTopo}>
-              <View style={styles.resumoIconeCirculo}>
-                <Ionicons name="heart" size={26} color={cores.destaque} />
-              </View>
-              <Text style={styles.resumoTitulo}>Resumo de saúde</Text>
-            </View>
-
-            <View style={styles.resumoLinha}>
-              <View style={styles.resumoIconePequeno}>
-                <Ionicons name="calendar-outline" size={18} color={cores.destaqueEscuro} />
-              </View>
-              <View style={{ marginLeft: espacamento.pequeno }}>
-                <Text style={styles.resumoLinhaTitulo}>Marcar consulta</Text>
-                <Text style={styles.resumoLinhaDescricao}>Encontre um horário disponível</Text>
-              </View>
-            </View>
-
+          <View style={styles.heroTopo}>
+            <Image
+              source={require("../../../assets/logo-preta.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
             <Pressable
-              onPress={agendarConsulta}
-              style={({ pressed }) => [styles.agendarBtn, pressed && { opacity: 0.9 }]}
+              onPress={() => Alert.alert("Notificações", "Nenhuma notificação nova por enquanto.")}
+              style={styles.sinoBtn}
+              hitSlop={8}
             >
-              <Text style={styles.agendarBtnTexto}>Agendar agora</Text>
+              <Ionicons name="notifications-outline" size={19} color={cores.branco} />
             </Pressable>
-          </Cartao>
-
-          {/* Grade 2x2 de atalhos */}
-          <View style={styles.grade}>
-            <CartaoAtalho
-              icon="medical-outline"
-              titulo="Informações médicas"
-              onPress={() => navigation.navigate("InfoMedicaCliente")}
-            />
-            <CartaoAtalho
-              icon="person-outline"
-              titulo="Meus dados"
-              onPress={() => navigation.navigate("MeusDadosCliente")}
-            />
-            <CartaoAtalho
-              icon="calendar-outline"
-              titulo="Consultas"
-              onPress={agendarConsulta}
-            />
-            <CartaoAtalho
-              icon="settings-outline"
-              titulo="Configurações"
-              onPress={() => setMenuAberto(true)}
-            />
           </View>
 
-          {/* Seletor de humor em linha */}
-          <Cartao style={styles.humorCartao}>
-            <Text style={styles.humorTitulo}>Como está seu humor hoje?</Text>
-            <View style={styles.humorLinha}>
-              {OPCOES_HUMOR.map((opcao) => {
-                const selecionado = checkinHoje?.humor === opcao.valor;
-                return (
-                  <View key={opcao.label} style={styles.humorItem}>
-                    <Pressable
-                      onPress={() => registrarHumor(opcao)}
-                      disabled={enviandoHumor}
-                      style={[styles.humorEmojiWrap, selecionado && styles.humorEmojiSelecionado]}
-                    >
-                      <Text style={styles.humorEmoji}>{opcao.emoji}</Text>
-                    </Pressable>
-                    {selecionado ? <Text style={styles.humorLabel}>{opcao.label}</Text> : null}
-                  </View>
-                );
-              })}
+          <View style={styles.heroPerfil}>
+            <View style={styles.avatarAnel}>
+              <Avatar iniciais={cliente?.fotoIniciais} size={46} />
             </View>
-            {enviandoHumor ? (
-              <ActivityIndicator size="small" color={cores.destaque} style={{ marginTop: espacamento.pequeno }} />
-            ) : null}
+            <View style={{ marginLeft: espacamento.medio, flex: 1 }}>
+              <Text style={styles.saudacao}>{saudacaoPorHorario()},</Text>
+              <Text style={styles.nomeCliente} numberOfLines={1}>{primeiroNome}</Text>
+            </View>
+          </View>
+        </LinearGradient>
 
-            <View style={styles.divisor} />
+        <View style={styles.conteudo}>
+          <Animated.View
+            style={{
+              opacity: opacidade,
+              transform: [{ translateY: deslocamento }],
+            }}
+          >
+            {/* Cartão de resumo — sobrepõe a faixa gradiente acima */}
+            <Cartao style={styles.cartaoResumo}>
+              <View style={styles.resumoTopo}>
+                <View style={styles.resumoIconeCirculo}>
+                  <Ionicons name="heart" size={24} color={cores.destaqueEscuro} />
+                </View>
+                <Text style={styles.resumoTitulo}>Resumo de saúde</Text>
+              </View>
 
-            <View style={{ width: "100%" }}>
-              <Text style={styles.disposicaoTitulo}>Qual sua disposição hoje?</Text>
-              <SliderClinico
-                label=""
-                value={disposicao}
-                onChange={setDisposicao}
-                sufixoValor={`/10`}
-                emojiEsquerda=""
-                emojiDireita=""
-              />
-              <View style={styles.disposicaoRodape}>
-                <Text style={styles.disposicaoExtremo}>Baixa</Text>
-                <Text style={styles.disposicaoExtremo}>Alta</Text>
+              <View style={styles.resumoLinha}>
+                <View style={styles.resumoIconePequeno}>
+                  <Ionicons name="calendar-outline" size={18} color={cores.destaqueEscuro} />
+                </View>
+                <View style={{ marginLeft: espacamento.pequeno }}>
+                  <Text style={styles.resumoLinhaTitulo}>Marcar consulta</Text>
+                  <Text style={styles.resumoLinhaDescricao}>Encontre um horário disponível</Text>
+                </View>
               </View>
 
               <Pressable
-                onPress={registrarDisposicao}
-                disabled={salvandoDisposicao}
-                style={({ pressed }) => [styles.registrarBtn, pressed && { opacity: 0.85 }]}
+                onPress={agendarConsulta}
+                style={({ pressed }) => [pressed && { opacity: 0.9 }]}
               >
-                {salvandoDisposicao ? (
-                  <ActivityIndicator size="small" color={cores.destaque} />
-                ) : (
-                  <Text style={styles.registrarBtnTexto}>Registrar</Text>
-                )}
+                <LinearGradient
+                  colors={cores.gradientePrincipal}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.agendarBtn}
+                >
+                  <Text style={styles.agendarBtnTexto}>Agendar agora</Text>
+                  <Ionicons name="arrow-forward" size={16} color={cores.branco} style={{ marginLeft: 6 }} />
+                </LinearGradient>
               </Pressable>
+            </Cartao>
+
+            {/* Card de check-in diário — só aparece se ainda não foi feito hoje */}
+            <CheckinDiario
+              checkins={cliente.checkins}
+              aoRegistrarRapido={aoRegistrarRapido}
+              aoRegistrarIndicadores={aoRegistrarIndicadores}
+            />
+
+            {/* Grade 2x2 de atalhos */}
+            <View style={styles.grade}>
+              <CartaoAtalho
+                icon="medical-outline"
+                titulo="Informações médicas"
+                onPress={() => navigation.navigate("InfoMedicaCliente")}
+              />
+              <CartaoAtalho
+                icon="person-outline"
+                titulo="Meus dados"
+                onPress={() => navigation.navigate("MeusDadosCliente")}
+              />
+              <CartaoAtalho
+                icon="calendar-outline"
+                titulo="Consultas"
+                onPress={agendarConsulta}
+              />
+              <CartaoAtalho
+                icon="settings-outline"
+                titulo="Configurações"
+                onPress={() => setMenuAberto(true)}
+              />
             </View>
-          </Cartao>
-        </Animated.View>
+
+            {/* Evolução da semana */}
+            <TituloSecao title="Sua evolução" icon="trending-up-outline" subtitle="Últimos check-ins registrados" />
+            <Cartao>
+              <TendenciaSemana checkins={cliente.checkins} />
+            </Cartao>
+          </Animated.View>
+        </View>
       </ScrollView>
 
       <MenuLateral
@@ -294,32 +268,63 @@ function CartaoAtalho({ icon, titulo, onPress }) {
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: cores.fundo },
+  loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: cores.fundo, paddingHorizontal: espacamento.grande },
   loadingTexto: {
     fontFamily: fontes.texto,
     fontSize: 13,
     color: cores.textoClaro,
     marginTop: espacamento.pequeno,
+    textAlign: "center",
   },
-  container: { paddingHorizontal: espacamento.grande, paddingTop: espacamento.enorme, paddingBottom: espacamento.gigante },
+  tentarNovamenteBtn: {
+    marginTop: espacamento.medio,
+    borderWidth: 1.5,
+    borderColor: cores.destaque,
+    borderRadius: raio.medio,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  tentarNovamenteTexto: { fontFamily: fontes.textoMedio, color: cores.destaque, fontSize: 13.5 },
 
-  header: { flexDirection: "row", alignItems: "center" },
-  saudacaoNome: { fontFamily: fontes.titulo, fontSize: 20, color: cores.textoEscuro },
-  subtitulo: { fontFamily: fontes.texto, fontSize: 13, color: cores.textoClaro, marginTop: 2 },
+  // Faixa gradiente do topo — elemento de assinatura da tela. Curva na
+  // base pra criar a sensação de camada, e o cartão de resumo logo
+  // abaixo sobrepõe essa curva (ver cartaoResumo.marginTop negativo).
+  heroBand: {
+    paddingHorizontal: espacamento.grande,
+    paddingBottom: espacamento.gigante + espacamento.pequeno,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+  heroTopo: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  logo: { width: 190, height: 50 },
   sinoBtn: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: cores.destaqueSuave,
+    backgroundColor: "rgba(255,255,255,0.18)",
     borderRadius: raio.pilula,
   },
+  heroPerfil: { flexDirection: "row", alignItems: "center", marginTop: espacamento.grande },
+  avatarAnel: {
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.85)",
+    borderRadius: raio.pilula,
+    padding: 2,
+  },
+  saudacao: { fontFamily: fontes.texto, fontSize: 13, color: "rgba(255,255,255,0.85)" },
+  nomeCliente: { fontFamily: fontes.titulo, fontSize: 22, color: cores.branco, marginTop: 1 },
 
-  cartaoResumo: { marginTop: espacamento.grande },
+  conteudo: { paddingHorizontal: espacamento.grande },
+
+  cartaoResumo: {
+    marginTop: -40,
+    ...sombra.flutuante,
+  },
   resumoTopo: { flexDirection: "row", alignItems: "center" },
   resumoIconeCirculo: {
-    width: 52,
-    height: 52,
+    width: 48,
+    height: 48,
     borderRadius: raio.pilula,
     backgroundColor: cores.destaqueSuave,
     alignItems: "center",
@@ -347,9 +352,9 @@ const styles = StyleSheet.create({
   resumoLinhaTitulo: { fontFamily: fontes.textoMedio, fontSize: 14.5, color: cores.textoEscuro },
   resumoLinhaDescricao: { fontFamily: fontes.texto, fontSize: 12, color: cores.textoClaro, marginTop: 1 },
   agendarBtn: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: cores.destaque,
     borderRadius: raio.medio,
     paddingVertical: 13,
     marginTop: espacamento.medio,
@@ -384,74 +389,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: cores.textoEscuro,
     marginTop: espacamento.medio,
-  },
-
-  humorCartao: { marginTop: espacamento.pequeno, alignItems: "center" },
-  humorTitulo: { fontFamily: fontes.titulo, fontSize: 16, color: cores.textoEscuro, marginBottom: espacamento.medio },
-  humorLinha: { flexDirection: "row", justifyContent: "space-between", width: "100%" },
-  humorItem: { alignItems: "center", width: 52 },
-  humorEmojiWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: raio.pilula,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  humorEmojiSelecionado: {
-    borderWidth: 2,
-    borderColor: cores.destaque,
-  },
-  humorEmoji: { fontSize: 26 },
-  humorLabel: {
-    fontFamily: fontes.textoMedio,
-    fontSize: 10,
-    color: cores.branco,
-    backgroundColor: cores.destaque,
-    borderRadius: raio.pilula,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginTop: 6,
-    overflow: "hidden",
-  },
-
-  divisor: {
-    height: 1,
-    backgroundColor: cores.borda,
-    width: "100%",
-    marginTop: espacamento.grande,
-    marginBottom: espacamento.grande,
-  },
-  disposicaoTitulo: {
-    fontFamily: fontes.titulo,
-    fontSize: 16,
-    color: cores.textoEscuro,
-    marginBottom: espacamento.medio,
-    alignSelf: "flex-start",
-  },
-  disposicaoRodape: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: -4,
-  },
-  disposicaoExtremo: {
-    fontFamily: fontes.texto,
-    fontSize: 12.5,
-    color: cores.textoClaro,
-  },
-  registrarBtn: {
-    alignSelf: "flex-end",
-    borderWidth: 1.5,
-    borderColor: cores.destaque,
-    borderRadius: raio.medio,
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    marginTop: espacamento.medio,
-    minWidth: 96,
-    alignItems: "center",
-  },
-  registrarBtnTexto: {
-    fontFamily: fontes.textoMedio,
-    fontSize: 13.5,
-    color: cores.destaque,
   },
 });

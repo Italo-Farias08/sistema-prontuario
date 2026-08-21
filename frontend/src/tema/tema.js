@@ -22,6 +22,11 @@ export const cores = {
   sucesso: "#3DB843",
   sucessoSuave: "#DFF3E1",
   sombra: "#000000",
+
+  // Par de cores pro gradiente principal (verde vivo -> verde-petróleo
+  // profundo). É o elemento de assinatura visual do app — usado na faixa
+  // do topo, no botão principal e no cartão de check-in.
+  gradientePrincipal: ["#4CC55B", "#1D6E4E"],
 };
 
 export const fontes = {
@@ -66,9 +71,18 @@ export const raio = {
 export const sombra = {
   cartao: {
     shadowColor: cores.sombra,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 4,
+  },
+  // Sombra mais forte, pra elementos "flutuando" sobre outra camada
+  // (ex.: o cartão de resumo sobre a faixa gradiente na tela do cliente).
+  flutuante: {
+    shadowColor: cores.sombra,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.16,
+    shadowRadius: 24,
+    elevation: 10,
   },
 };

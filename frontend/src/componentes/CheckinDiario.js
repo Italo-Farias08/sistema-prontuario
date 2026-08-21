@@ -134,8 +134,8 @@ export default function CheckinDiario({ checkins, aoRegistrarRapido, aoRegistrar
 
   return (
     <Animated.View style={{ opacity: opacidadeCard }}>
-      <LinearGradient
-        colors={[cores.destaque, cores.destaqueEscuro]}
+    <LinearGradient
+  colors={cores.gradientePrincipal}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.cartao}
