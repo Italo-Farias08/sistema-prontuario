@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Área do Médico | Painel Administrativo</title>
-<link rel="icon" href="favicon.ico">
+<link rel="icon" href="favicon.ico?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:wght@500;600;700&display=swap" rel="stylesheet">
@@ -548,6 +548,48 @@
   }
   #modal-msg.sucesso{ background: var(--verde-claro); color: #047857; }
 
+  /* ===== Histórico de consultas (cartões por visita) ===== */
+  .consulta-card{
+    background: var(--branco);
+    border: 1px solid var(--cinza-borda);
+    border-left: 4px solid var(--verde);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .consulta-card.tem-risco{ border-left-color: var(--vermelho); }
+  .consulta-cabecalho{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .consulta-data{
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--verde-escuro);
+  }
+  .consulta-resumo{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom: 8px; }
+  .consulta-chip{
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--verde-suave-bg);
+    color: var(--verde-escuro);
+    white-space: nowrap;
+  }
+  .consulta-chip.risco{ background: var(--vermelho-bg); color: var(--vermelho); }
+  .consulta-evolucao{
+    font-size: 12.5px;
+    color: var(--texto);
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  .consulta-evolucao.vazia{ color: var(--texto-suave); font-style: italic; }
+
   .toast{
     position: fixed;
     bottom: 24px;
@@ -671,6 +713,7 @@
 
     <div class="modal-tabs">
       <button class="modal-tab ativa" data-aba="cadastro">Cadastro</button>
+      <button class="modal-tab" data-aba="historico">Histórico</button>
       <button class="modal-tab" data-aba="prontuario">Prontuário</button>
       <button class="modal-tab" data-aba="sintomas">Sintomas</button>
       <button class="modal-tab" data-aba="exameMental">Exame mental</button>
@@ -705,6 +748,13 @@
           <div class="campo"><label>Comorbidades</label><textarea id="f-comorbidades" rows="2" placeholder="Ex: Hipotireoidismo"></textarea></div>
           <div class="campo"><label>Alergias</label><textarea id="f-alergias" rows="2" placeholder="Ex: Dipirona"></textarea></div>
           <div class="campo"><label>Hábitos</label><textarea id="f-habitos" rows="2" placeholder="Ex: Tabagismo, etilismo"></textarea></div>
+        </div>
+
+        <!-- ABA: HISTÓRICO DE CONSULTAS -->
+        <div class="aba" data-aba="historico">
+          <div class="secao-titulo"><span class="badge-icone">🕑</span> Histórico de consultas</div>
+          <div class="secao-sub">Uma seção por visita, mais recente primeiro — compare a evolução do paciente</div>
+          <div id="lista-historico-consultas"></div>
         </div>
 
         <!-- ABA: PRONTUÁRIO -->
@@ -1178,6 +1228,51 @@ function atualizarCamposCondicionaisExame(){
   document.getElementById('wrap-percepcao-quais').style.display = exameMental.percepcao === 'Alucinações' ? 'block' : 'none'
 }
 
+/* =====================================================================
+   HISTÓRICO DE CONSULTAS — uma seção por visita, para comparar evolução
+   ===================================================================== */
+function temAlertaRiscoConsulta(c){
+  const r = c.riscos || {}
+  return (r.ideacaoSuicida?.resposta && r.ideacaoSuicida.resposta !== 'Não')
+      || (r.heteroagressao?.resposta === 'Sim')
+      || (r.sintomasPsicoticos?.resposta === 'Sim')
+}
+
+function renderizarHistoricoConsultas(consultas){
+  const container = document.getElementById('lista-historico-consultas')
+  if(!consultas || consultas.length === 0){
+    container.innerHTML = `<p style="font-size:12.5px; color:var(--texto-suave);">Nenhuma consulta anterior registrada ainda. Ao salvar hoje, esta será a primeira seção do histórico.</p>`
+    return
+  }
+
+  container.innerHTML = consultas.map(c => {
+    const rs = c.revisaoSintomas || {}
+    const chips = []
+    if(rs.humor) chips.push(`Humor: ${escapeHtml(rs.humor)}`)
+    if(rs.sono) chips.push(`Sono: ${escapeHtml(rs.sono)}`)
+    if(rs.energia) chips.push(`Energia: ${escapeHtml(rs.energia)}`)
+    if(rs.apetite) chips.push(`Apetite: ${escapeHtml(rs.apetite)}`)
+
+    const alerta = temAlertaRiscoConsulta(c)
+    const chipsHtml = chips.map(t => `<span class="consulta-chip">${t}</span>`).join('')
+      + (alerta ? `<span class="consulta-chip risco">⚠ Risco identificado</span>` : '')
+
+    const evolucao = c.historiaDoenca
+      ? escapeHtml(c.historiaDoenca)
+      : `<span class="consulta-evolucao vazia">Sem anotação de evolução para esta data.</span>`
+
+    return `
+      <div class="consulta-card ${alerta ? 'tem-risco' : ''}">
+        <div class="consulta-cabecalho">
+          <div class="consulta-data">📅 ${escapeHtml(c.data)}</div>
+        </div>
+        ${chipsHtml ? `<div class="consulta-resumo">${chipsHtml}</div>` : ''}
+        <div class="consulta-evolucao">${evolucao}</div>
+      </div>
+    `
+  }).join('')
+}
+
 function renderizarMedicacoes(){
   const container = document.getElementById('lista-medicacoes')
   if(medicacoes.length === 0){
@@ -1238,6 +1333,7 @@ function limparFormulario(){
   atualizarCamposCondicionais()
   atualizarCamposCondicionaisExame()
   renderizarMedicacoes()
+  renderizarHistoricoConsultas([])
   modalMsgEl.style.display = 'none'
   modalMsgEl.classList.remove('sucesso')
   document.querySelectorAll('.modal-tab')[0].click()
@@ -1277,6 +1373,7 @@ async function abrirModalEdicao(id){
 
     medicacoes = (p.medicacoes || []).map(m => ({ nome: m.nome || '', dosagem: m.dosagem || '', horario: m.horario || '' }))
     renderizarMedicacoes()
+    renderizarHistoricoConsultas(p.consultas || [])
 
     const rs = p.revisaoSintomas || {}
     sintomas.sono = rs.sono || ''

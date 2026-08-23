@@ -24,6 +24,14 @@ async function buscarCheckins(idPaciente) {
   return resultado.rows;
 }
 
+async function buscarConsultas(idPaciente) {
+  const resultado = await bancoDados.query(
+    "SELECT * FROM consultas WHERE paciente_id = $1 ORDER BY data DESC",
+    [idPaciente]
+  );
+  return resultado.rows;
+}
+
 async function listarPacientes() {
   const resultado = await bancoDados.query(
     "SELECT * FROM pacientes ORDER BY atualizado_em DESC"
@@ -52,12 +60,13 @@ async function buscarPacientePorId(id) {
     throw erro;
   }
 
-  const [medicacoes, checkins] = await Promise.all([
+  const [medicacoes, checkins, consultas] = await Promise.all([
     buscarMedicacoes(id),
     buscarCheckins(id),
+    buscarConsultas(id),
   ]);
 
-  return formatarPaciente(linha, medicacoes, checkins);
+  return formatarPaciente(linha, medicacoes, checkins, consultas);
 }
 
 async function criarPaciente(dados) {
@@ -139,6 +148,8 @@ async function criarPaciente(dados) {
         [paciente.id, medicacao.nome, medicacao.dosagem, medicacao.horario]
       );
     }
+
+    await upsertConsulta(cliente, paciente.id, dados);
 
     await cliente.query("COMMIT");
     return buscarPacientePorId(paciente.id);
@@ -263,6 +274,8 @@ async function atualizarPaciente(id, alteracoes) {
       }
     }
 
+    await upsertConsulta(cliente, id, alteracoes);
+
     await cliente.query("COMMIT");
     return buscarPacientePorId(id);
   } catch (erro) {
@@ -301,6 +314,76 @@ function converterDataBr(dataBr) {
   const [dia, mes, ano] = dataBr.split("/");
   if (!dia || !mes || !ano) return null;
   return `${ano}-${mes}-${dia}`;
+}
+
+/**
+ * Registra (ou atualiza, se já existir uma consulta hoje) a "fotografia"
+ * clínica do dia: revisão de sintomas, exame do estado mental, avaliação
+ * de risco, evolução e conduta. Roda dentro da mesma transação do
+ * criarPaciente/atualizarPaciente. Se o médico não preencheu nada clínico
+ * nesse salvamento (ex: só corrigiu o telefone), não cria consulta vazia.
+ */
+async function upsertConsulta(cliente, idPaciente, dados) {
+  const vazio = (v) => (v === undefined || v === null || v === "" ? null : v);
+  const orientacao = Array.isArray(dados.exameMental?.orientacao) && dados.exameMental.orientacao.length > 0
+    ? dados.exameMental.orientacao
+    : null;
+
+  const campos = {
+    historia_doenca: vazio(dados.historiaDoenca),
+    plano_terapeutico: vazio(dados.planoTerapeutico),
+    sono: vazio(dados.revisaoSintomas?.sono),
+    apetite: vazio(dados.revisaoSintomas?.apetite),
+    libido: vazio(dados.revisaoSintomas?.libido),
+    humor: vazio(dados.revisaoSintomas?.humor),
+    energia: vazio(dados.revisaoSintomas?.energia),
+    concentracao: vazio(dados.revisaoSintomas?.concentracao),
+    funcionalidade: vazio(dados.revisaoSintomas?.funcionalidade),
+    uso_substancias: vazio(dados.revisaoSintomas?.substancias?.uso),
+    outras_substancias_descricao: vazio(dados.revisaoSintomas?.substancias?.outrasDescricao),
+    ideacao_suicida_resposta: vazio(dados.riscos?.ideacaoSuicida?.resposta),
+    ideacao_suicida_observacao: vazio(dados.riscos?.ideacaoSuicida?.obs),
+    heteroagressao_resposta: vazio(dados.riscos?.heteroagressao?.resposta),
+    heteroagressao_funcao: vazio(dados.riscos?.heteroagressao?.funcao),
+    sintomas_psicoticos_resposta: vazio(dados.riscos?.sintomasPsicoticos?.resposta),
+    sintomas_psicoticos_funcao: vazio(dados.riscos?.sintomasPsicoticos?.funcao),
+    exame_aparencia: vazio(dados.exameMental?.aparencia),
+    exame_atitude: vazio(dados.exameMental?.atitude),
+    exame_consciencia: vazio(dados.exameMental?.consciencia),
+    exame_orientacao: orientacao,
+    exame_atencao: vazio(dados.exameMental?.atencao),
+    exame_memoria: vazio(dados.exameMental?.memoria),
+    exame_fala: vazio(dados.exameMental?.fala),
+    exame_psicomotricidade: vazio(dados.exameMental?.psicomotricidade),
+    exame_humor: vazio(dados.exameMental?.humor),
+    exame_afeto: vazio(dados.exameMental?.afeto),
+    exame_pensamento_curso: vazio(dados.exameMental?.pensamentoCurso),
+    exame_pensamento_conteudo: vazio(dados.exameMental?.pensamentoConteudo),
+    exame_percepcao: vazio(dados.exameMental?.percepcao),
+    exame_percepcao_quais: vazio(dados.exameMental?.percepcaoQuais),
+    exame_critica: vazio(dados.exameMental?.critica),
+  };
+
+  // Se nada clínico foi preenchido neste salvamento, não cria consulta vazia.
+  const temConteudo = Object.values(campos).some((v) => v !== null);
+  if (!temConteudo) return;
+
+  const colunas = Object.keys(campos);
+  const valores = Object.values(campos);
+  const placeholdersInsert = colunas.map((_, i) => `$${i + 3}`).join(", ");
+  const setClausulas = colunas.map((col) => `${col} = COALESCE(EXCLUDED.${col}, consultas.${col})`).join(",\n      ");
+
+  await cliente.query(
+    `INSERT INTO consultas (paciente_id, data, ${colunas.join(", ")})
+     VALUES ($1, $2, ${placeholdersInsert})
+     ON CONFLICT (paciente_id, data) DO UPDATE SET
+       ${setClausulas}`,
+    [idPaciente, formatarDataHojeIso(), ...valores]
+  );
+}
+
+function formatarDataHojeIso() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 module.exports = {

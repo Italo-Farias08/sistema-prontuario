@@ -10,7 +10,7 @@ function formatarData(data) {
  * check-ins já carregados, e devolve o objeto no mesmo formato que o
  * front-end já consome (mesmo "shape" de src/dados/dadosMock.js).
  */
-function formatarPaciente(linhaPaciente, medicacoes = [], checkins = []) {
+function formatarPaciente(linhaPaciente, medicacoes = [], checkins = [], consultas = []) {
   return {
     id: linhaPaciente.id,
 
@@ -95,6 +95,50 @@ function formatarPaciente(linhaPaciente, medicacoes = [], checkins = []) {
       humor: c.humor,
       energia: c.energia,
       ansiedade: c.ansiedade,
+    })),
+
+    // Histórico de consultas (uma "fotografia" clínica por visita, mais
+    // recente primeiro) — usado para comparar a evolução do paciente.
+    consultas: consultas.map((c) => ({
+      id: c.id,
+      data: formatarData(c.data),
+      historiaDoenca: c.historia_doenca,
+      planoTerapeutico: c.plano_terapeutico,
+      revisaoSintomas: {
+        sono: c.sono,
+        apetite: c.apetite,
+        libido: c.libido,
+        humor: c.humor,
+        energia: c.energia,
+        concentracao: c.concentracao,
+        funcionalidade: c.funcionalidade,
+        substancias: {
+          uso: c.uso_substancias,
+          outrasDescricao: c.outras_substancias_descricao,
+        },
+      },
+      riscos: {
+        ideacaoSuicida: { resposta: c.ideacao_suicida_resposta, obs: c.ideacao_suicida_observacao },
+        heteroagressao: { resposta: c.heteroagressao_resposta, funcao: c.heteroagressao_funcao },
+        sintomasPsicoticos: { resposta: c.sintomas_psicoticos_resposta, funcao: c.sintomas_psicoticos_funcao },
+      },
+      exameMental: {
+        aparencia: c.exame_aparencia,
+        atitude: c.exame_atitude,
+        consciencia: c.exame_consciencia,
+        orientacao: c.exame_orientacao || [],
+        atencao: c.exame_atencao,
+        memoria: c.exame_memoria,
+        fala: c.exame_fala,
+        psicomotricidade: c.exame_psicomotricidade,
+        humor: c.exame_humor,
+        afeto: c.exame_afeto,
+        pensamentoCurso: c.exame_pensamento_curso,
+        pensamentoConteudo: c.exame_pensamento_conteudo,
+        percepcao: c.exame_percepcao,
+        percepcaoQuais: c.exame_percepcao_quais,
+        critica: c.exame_critica,
+      },
     })),
 
     atualizadoEm: formatarData(linhaPaciente.atualizado_em),
