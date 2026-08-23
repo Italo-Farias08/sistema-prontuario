@@ -74,8 +74,12 @@ async function criarPaciente(dados) {
          uso_substancias, outras_substancias_descricao,
          ideacao_suicida_resposta, ideacao_suicida_observacao,
          heteroagressao_resposta, heteroagressao_funcao,
-         sintomas_psicoticos_resposta, sintomas_psicoticos_funcao
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31)
+         sintomas_psicoticos_resposta, sintomas_psicoticos_funcao,
+         exame_aparencia, exame_atitude, exame_consciencia, exame_orientacao,
+         exame_atencao, exame_memoria, exame_fala, exame_psicomotricidade,
+         exame_humor, exame_afeto, exame_pensamento_curso, exame_pensamento_conteudo,
+         exame_percepcao, exame_percepcao_quais, exame_critica
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46)
        RETURNING *`,
       [
         dados.nome,
@@ -109,6 +113,21 @@ async function criarPaciente(dados) {
         dados.riscos?.heteroagressao?.funcao || null,
         dados.riscos?.sintomasPsicoticos?.resposta || null,
         dados.riscos?.sintomasPsicoticos?.funcao || null,
+        dados.exameMental?.aparencia || null,
+        dados.exameMental?.atitude || null,
+        dados.exameMental?.consciencia || null,
+        Array.isArray(dados.exameMental?.orientacao) ? dados.exameMental.orientacao : null,
+        dados.exameMental?.atencao || null,
+        dados.exameMental?.memoria || null,
+        dados.exameMental?.fala || null,
+        dados.exameMental?.psicomotricidade || null,
+        dados.exameMental?.humor || null,
+        dados.exameMental?.afeto || null,
+        dados.exameMental?.pensamentoCurso || null,
+        dados.exameMental?.pensamentoConteudo || null,
+        dados.exameMental?.percepcao || null,
+        dados.exameMental?.percepcaoQuais || null,
+        dados.exameMental?.critica || null,
       ]
     );
 
@@ -167,7 +186,22 @@ async function atualizarPaciente(id, alteracoes) {
          heteroagressao_resposta = COALESCE($28, heteroagressao_resposta),
          heteroagressao_funcao = COALESCE($29, heteroagressao_funcao),
          sintomas_psicoticos_resposta = COALESCE($30, sintomas_psicoticos_resposta),
-         sintomas_psicoticos_funcao = COALESCE($31, sintomas_psicoticos_funcao)
+         sintomas_psicoticos_funcao = COALESCE($31, sintomas_psicoticos_funcao),
+         exame_aparencia = COALESCE($32, exame_aparencia),
+         exame_atitude = COALESCE($33, exame_atitude),
+         exame_consciencia = COALESCE($34, exame_consciencia),
+         exame_orientacao = COALESCE($35, exame_orientacao),
+         exame_atencao = COALESCE($36, exame_atencao),
+         exame_memoria = COALESCE($37, exame_memoria),
+         exame_fala = COALESCE($38, exame_fala),
+         exame_psicomotricidade = COALESCE($39, exame_psicomotricidade),
+         exame_humor = COALESCE($40, exame_humor),
+         exame_afeto = COALESCE($41, exame_afeto),
+         exame_pensamento_curso = COALESCE($42, exame_pensamento_curso),
+         exame_pensamento_conteudo = COALESCE($43, exame_pensamento_conteudo),
+         exame_percepcao = COALESCE($44, exame_percepcao),
+         exame_percepcao_quais = COALESCE($45, exame_percepcao_quais),
+         exame_critica = COALESCE($46, exame_critica)
        WHERE id = $1`,
       [
         id,
@@ -201,6 +235,21 @@ async function atualizarPaciente(id, alteracoes) {
         alteracoes.riscos?.heteroagressao?.funcao ?? null,
         alteracoes.riscos?.sintomasPsicoticos?.resposta ?? null,
         alteracoes.riscos?.sintomasPsicoticos?.funcao ?? null,
+        alteracoes.exameMental?.aparencia ?? null,
+        alteracoes.exameMental?.atitude ?? null,
+        alteracoes.exameMental?.consciencia ?? null,
+        Array.isArray(alteracoes.exameMental?.orientacao) ? alteracoes.exameMental.orientacao : null,
+        alteracoes.exameMental?.atencao ?? null,
+        alteracoes.exameMental?.memoria ?? null,
+        alteracoes.exameMental?.fala ?? null,
+        alteracoes.exameMental?.psicomotricidade ?? null,
+        alteracoes.exameMental?.humor ?? null,
+        alteracoes.exameMental?.afeto ?? null,
+        alteracoes.exameMental?.pensamentoCurso ?? null,
+        alteracoes.exameMental?.pensamentoConteudo ?? null,
+        alteracoes.exameMental?.percepcao ?? null,
+        alteracoes.exameMental?.percepcaoQuais ?? null,
+        alteracoes.exameMental?.critica ?? null,
       ]
     );
 

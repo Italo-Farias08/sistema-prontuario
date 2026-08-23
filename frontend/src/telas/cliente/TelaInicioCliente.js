@@ -220,10 +220,10 @@ export default function TelaInicioCliente({ navigation }) {
                 onPress={() => navigation.navigate("MeusDadosCliente")}
               />
               <CartaoAtalho
-                icon="calendar-outline"
-                titulo="Consultas"
-                onPress={agendarConsulta}
-              />
+  icon="chatbubble-ellipses-outline"
+  titulo="Mensagem"
+  onPress={() => navigation.navigate("ChatCliente")}
+/>
               <CartaoAtalho
                 icon="settings-outline"
                 titulo="Configurações"
@@ -286,9 +286,6 @@ const styles = StyleSheet.create({
   },
   tentarNovamenteTexto: { fontFamily: fontes.textoMedio, color: cores.destaque, fontSize: 13.5 },
 
-  // Faixa gradiente do topo — elemento de assinatura da tela. Curva na
-  // base pra criar a sensação de camada, e o cartão de resumo logo
-  // abaixo sobrepõe essa curva (ver cartaoResumo.marginTop negativo).
   heroBand: {
     paddingHorizontal: espacamento.grande,
     paddingBottom: espacamento.gigante + espacamento.pequeno,
@@ -296,7 +293,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 32,
   },
   heroTopo: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  logo: { width: 190, height: 50 },
+  logo: { width: 240, height: 70 },
   sinoBtn: {
     width: 38,
     height: 38,

@@ -70,6 +70,24 @@ function formatarPaciente(linhaPaciente, medicacoes = [], checkins = []) {
       },
     },
 
+    exameMental: {
+      aparencia: linhaPaciente.exame_aparencia,
+      atitude: linhaPaciente.exame_atitude,
+      consciencia: linhaPaciente.exame_consciencia,
+      orientacao: linhaPaciente.exame_orientacao || [],
+      atencao: linhaPaciente.exame_atencao,
+      memoria: linhaPaciente.exame_memoria,
+      fala: linhaPaciente.exame_fala,
+      psicomotricidade: linhaPaciente.exame_psicomotricidade,
+      humor: linhaPaciente.exame_humor,
+      afeto: linhaPaciente.exame_afeto,
+      pensamentoCurso: linhaPaciente.exame_pensamento_curso,
+      pensamentoConteudo: linhaPaciente.exame_pensamento_conteudo,
+      percepcao: linhaPaciente.exame_percepcao,
+      percepcaoQuais: linhaPaciente.exame_percepcao_quais,
+      critica: linhaPaciente.exame_critica,
+    },
+
     checkins: checkins.map((c) => ({
       data: formatarData(c.data).slice(0, 5), // "dd/mm"
       sono: c.sono,

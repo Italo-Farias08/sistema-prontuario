@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Área do Médico | Painel Administrativo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Paleta "consultório" — verde-petróleo profundo + acento bronze.
+       Troque só os valores hexadecimais abaixo pra mudar a identidade
+       visual inteira do painel (os nomes das variáveis podem continuar
+       "verde" mesmo o tom sendo petróleo, é só um nome interno). */
+    --verde: #2f6f5c;
+    --verde-escuro: #123a30;
+    --verde-claro: #dce8e2;
+    --verde-suave-bg: #f0f5f2;
+    --bronze: #a9782e;
+    --bronze-claro: #f6eedd;
+    --ambar: #92600b;
+    --ambar-bg: #fbf1de;
+    --vermelho: #b3261e;
+    --vermelho-bg: #fbeaea;
+    --cinza-bg: #f4f6f4;
+    --cinza-borda: #e1e7e2;
+    --texto: #1c2622;
+    --texto-suave: #67766f;
+    --branco: #ffffff;
+    --gradiente-marca: linear-gradient(135deg, #0b211c 0%, #123a30 45%, #1f5445 100%);
+    --sombra-sm: 0 1px 2px rgba(18, 30, 26, .06), 0 2px 6px rgba(18, 30, 26, .05);
+    --sombra-md: 0 8px 20px rgba(18, 30, 26, .09), 0 2px 8px rgba(18, 30, 26, .05);
+    --sombra-lg: 0 26px 60px rgba(18, 30, 26, .18), 0 8px 22px rgba(18, 30, 26, .09);
+  }
+  *{ box-sizing: border-box; margin:0; padding:0; }
+  body{
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    background:
+      radial-gradient(1100px 380px at 12% -12%, #eaf1ed 0%, transparent 60%),
+      var(--cinza-bg);
+    color: var(--texto);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, .marca-serif{ font-family: 'Lora', Georgia, serif; }
+
+  /* ===================== TELA DE LOGIN ===================== */
+  #tela-login{
+    min-height: 100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 20px;
+  }
+  .login-card{
+    position: relative;
+    background: var(--branco);
+    border: 1px solid var(--cinza-borda);
+    border-radius: 20px;
+    padding: 44px 38px 38px;
+    width: 100%;
+    max-width: 384px;
+    box-shadow: var(--sombra-lg);
+    overflow: hidden;
+  }
+  .login-card::before{
+    /* traço de assinatura no topo do cartão — repetido no cabeçalho e no modal */
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--verde-escuro), var(--bronze));
+  }
+  .login-logo{
+    display:flex; align-items:center; justify-content:center;
+    color: var(--verde-escuro);
+    font-size: 40px;
+    margin: 0 auto 20px;
+  }
+  .login-logo img{ max-width: 180px; max-height: 72px; width:auto; height:auto; object-fit: contain; }
+  .login-logo .logo-fallback{ display:none; }
+  .login-card h1{
+    text-align:center;
+    font-size: 21px;
+    font-weight: 600;
+    letter-spacing: -.005em;
+    margin-bottom: 5px;
+  }
+  .login-card p.sub{
+    text-align:center;
+    font-size: 13px;
+    color: var(--texto-suave);
+    margin-bottom: 28px;
+  }
+  .login-card label{
+    display:block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--texto-suave);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin: 16px 0 6px;
+  }
+  .login-card label:first-of-type{ margin-top:0; }
+  .login-card input{
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--cinza-borda);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--cinza-bg);
+    outline: none;
+    transition: border-color .15s, background .15s, box-shadow .15s;
+  }
+  .login-card input:focus{
+    border-color: var(--verde);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(47,111,92,.14);
+  }
+  .login-card .btn-primario{ margin-top: 22px; }
+  .login-rodape{
+    text-align:center;
+    font-size: 11.5px;
+    color: var(--texto-suave);
+    margin-top: 20px;
+    letter-spacing: .01em;
+  }
+  #login-erro{
+    margin-top: 14px;
+    background: var(--vermelho-bg);
+    color: var(--vermelho);
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    display:none;
+    font-weight: 500;
+  }
+
+  /* ===================== PAINEL PRINCIPAL ===================== */
+  #painel-principal{ display:none; }
+
+  header{
+    background: var(--gradiente-marca);
+    color: #fff;
+    padding: 22px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--sombra-md);
+    border-bottom: 3px solid var(--bronze);
+    position: relative;
+    z-index: 5;
+  }
+  header .marca{ display:flex; align-items:center; gap:16px; }
+
+  .logo-slot{
+    display:flex; align-items:center; justify-content:center;
+    color: #fff;
+    font-size: 30px;
+    flex-shrink: 0;
+  }
+  .logo-slot img{ max-width: 140px; max-height: 46px; width:auto; height:auto; object-fit: contain; }
+  .logo-slot .logo-fallback{ display:none; }
+
+  header h1{ font-size: 20px; font-weight:600; letter-spacing: -.005em; }
+  header p{ font-size: 12.5px; opacity:.85; margin-top: 3px; letter-spacing: .01em; }
+
+  .header-acoes{ display:flex; align-items:center; gap:10px; }
+  .header-selo{
+    font-size: 12px;
+    background: rgba(255,255,255,.18);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    border: 1px solid rgba(255,255,255,.3);
+  }
+  .btn-sair{
+    font-size: 12.5px;
+    font-weight: 700;
+    background: rgba(255,255,255,.14);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.35);
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .btn-sair:hover{ background: rgba(255,255,255,.24); }
+
+  main{
+    max-width: 1180px;
+    margin: 28px auto;
+    padding: 0 24px 60px;
+  }
+
+  /* ===== Estatísticas ===== */
+  .stats{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 18px;
+    margin-bottom: 26px;
+  }
+  .stat-card{
+    background: var(--branco);
+    border: 1px solid var(--cinza-borda);
+    border-radius: 16px;
+    padding: 20px 22px;
+    box-shadow: var(--sombra-sm);
+    display:flex;
+    align-items: center;
+    gap: 16px;
+    transition: box-shadow .2s, transform .2s;
+  }
+  .stat-card:hover{ box-shadow: var(--sombra-md); transform: translateY(-2px); }
+  .stat-card .icone{
+    width: 46px; height:46px;
+    border-radius: 12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 20px;
+    flex-shrink:0;
+  }
+  .stat-card.total .icone{ background: var(--bronze-claro); }
+  .stat-card.risco .icone{ background: var(--vermelho-bg); }
+  .stat-card.atualizados .icone{ background: var(--verde-claro); }
+  .stat-card .valor{ font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+  .stat-card .rotulo{ font-size: 13px; color: var(--texto-suave); margin-top:2px; }
+  .stat-card.total .valor{ color: var(--bronze); }
+  .stat-card.risco .valor{ color: var(--vermelho); }
+  .stat-card.atualizados .valor{ color: var(--verde-escuro); }
+
+  /* ===== Barra de ações da lista ===== */
+  .barra-acoes{
+    display:flex;
+    gap: 12px;
+    align-items:center;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .barra-acoes input#busca{
+    flex: 1;
+    min-width: 220px;
+    padding: 11px 14px;
+    border: 1.5px solid var(--cinza-borda);
+    border-radius: 10px;
+    font-size: 14px;
+    background: var(--branco);
+    outline: none;
+    box-shadow: var(--sombra-sm);
+  }
+  .barra-acoes input#busca:focus{
+    border-color: var(--verde);
+    box-shadow: 0 0 0 4px rgba(47,111,92,.14);
+  }
+  .btn{
+    border: none;
+    border-radius: 10px;
+    padding: 11px 18px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter .15s, transform .05s, box-shadow .15s;
+    white-space: nowrap;
+  }
+  .btn:active{ transform: scale(.98); }
+  .btn-primario{
+    background: linear-gradient(120deg, var(--verde-escuro), var(--verde));
+    color: #fff;
+    box-shadow: 0 6px 14px rgba(18,58,48,.32);
+  }
+  .btn-primario:hover{ filter: brightness(1.05); }
+  .btn-secundario{
+    background: var(--branco);
+    color: var(--texto);
+    border: 1.5px solid var(--cinza-borda);
+  }
+  .btn-secundario:hover{ border-color: var(--verde); color: var(--verde-escuro); }
+  .btn-sm{ padding: 7px 12px; font-size: 12.5px; border-radius: 8px; }
+
+  /* ===== Lista de pacientes ===== */
+  .lista-pacientes{ display:flex; flex-direction:column; gap: 12px; }
+  .card-paciente{
+    background: var(--branco);
+    border: 1px solid var(--cinza-borda);
+    border-radius: 13px;
+    padding: 16px 18px;
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    cursor: pointer;
+    transition: box-shadow .15s, border-color .15s, transform .1s;
+  }
+  .card-paciente:hover{ box-shadow: var(--sombra-md); border-color: #bfe6d6; transform: translateY(-1px); }
+  .card-paciente .info{ display:flex; align-items:center; gap: 12px; }
+  .avatar{
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--verde-claro);
+    color: var(--verde-escuro);
+    display:flex; align-items:center; justify-content:center;
+    font-weight: 800;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .card-paciente .info h3{ font-size:15px; font-weight: 700; }
+  .card-paciente .info p{ font-size: 13px; color: var(--texto-suave); margin-top: 2px; }
+  .tags-risco{ display:flex; gap:6px; flex-wrap:wrap; }
+  .tag{
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    white-space: nowrap;
+  }
+  .tag.alerta{ background: var(--vermelho-bg); color: var(--vermelho); }
+  .tag.ok{ background: var(--verde-claro); color: var(--verde-escuro); }
+
+  .vazio{
+    text-align:center;
+    color: var(--texto-suave);
+    font-size: 14px;
+    padding: 50px 0;
+    background: var(--branco);
+    border: 1px dashed var(--cinza-borda);
+    border-radius: 14px;
+  }
+
+  footer{
+    text-align:center;
+    font-size: 12px;
+    color: var(--texto-suave);
+    padding: 20px;
+  }
+
+  /* ===================== MODAL FICHA DO PACIENTE ===================== */
+  .modal-fundo{
+    display:none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 20, .48);
+    z-index: 50;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 30px 16px;
+    overflow-y: auto;
+  }
+  .modal-fundo.aberto{ display:flex; }
+  .modal-caixa{
+    background: var(--branco);
+    border-radius: 18px;
+    width: 100%;
+    max-width: 780px;
+    box-shadow: var(--sombra-lg);
+    overflow: hidden;
+    margin-bottom: 30px;
+  }
+  .modal-topo{
+    background: var(--gradiente-marca);
+    color:#fff;
+    padding: 22px 26px;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 14px;
+    border-bottom: 3px solid var(--bronze);
+  }
+  .modal-topo .info-paciente{ display:flex; align-items:center; gap: 14px; }
+  .modal-topo .avatar{
+    width: 54px; height:54px;
+    background: rgba(255,255,255,.2);
+    color:#fff;
+    font-size: 17px;
+  }
+  .modal-topo h2{ font-size: 17px; font-weight: 800; }
+  .modal-topo p{ font-size: 12.5px; opacity: .9; margin-top: 2px; }
+  .btn-fechar{
+    background: rgba(255,255,255,.16);
+    border: none;
+    color: #fff;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .btn-fechar:hover{ background: rgba(255,255,255,.28); }
+
+  .modal-tabs{
+    display:flex;
+    gap: 6px;
+    padding: 14px 26px 0;
+    border-bottom: 1px solid var(--cinza-borda);
+    overflow-x: auto;
+  }
+  .modal-tab{
+    background: none;
+    border: none;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--texto-suave);
+    cursor: pointer;
+    border-bottom: 2.5px solid transparent;
+    white-space: nowrap;
+  }
+  .modal-tab.ativa{
+    color: var(--verde-escuro);
+    border-bottom-color: var(--verde);
+  }
+
+  .modal-corpo{ padding: 22px 26px 26px; max-height: 60vh; overflow-y: auto; }
+  .aba{ display:none; }
+  .aba.ativa{ display:block; }
+
+  .secao-titulo{
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--texto);
+    margin: 20px 0 12px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .secao-titulo:first-child{ margin-top: 0; }
+  .secao-titulo .badge-icone{
+    width: 26px; height:26px;
+    background: var(--verde-suave-bg);
+    color: var(--verde-escuro);
+    border-radius: 7px;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 13px;
+  }
+  .secao-sub{ font-size: 11.5px; color: var(--texto-suave); margin: -8px 0 12px 34px; }
+
+  .grade-2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px){ .grade-2{ grid-template-columns: 1fr; } }
+
+  .campo{ margin-bottom: 12px; }
+  .campo label{
+    display:block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--texto-suave);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    margin-bottom: 5px;
+  }
+  .campo input, .campo textarea, .campo select{
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--cinza-borda);
+    border-radius: 9px;
+    font-size: 13.5px;
+    font-family: inherit;
+    outline: none;
+    background: var(--cinza-bg);
+    transition: border-color .15s, background .15s, box-shadow .15s;
+    resize: vertical;
+  }
+  .campo input:focus, .campo textarea:focus, .campo select:focus{
+    border-color: var(--verde);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(47,111,92,.14);
+  }
+
+  /* Pills (seletor de opção única) */
+  .pills{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom: 4px; }
+  .pill{
+    background: var(--cinza-bg);
+    border: 1.5px solid var(--cinza-borda);
+    color: var(--texto-suave);
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .pill:hover{ border-color: var(--verde); }
+  .pill.selecionada{
+    background: var(--verde-escuro);
+    border-color: var(--verde-escuro);
+    color: #fff;
+  }
+  .pill-percentual{
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--verde-escuro);
+    margin-left: 6px;
+  }
+  .campo-pills{ margin-bottom: 18px; }
+
+  /* Pills de risco (Não/Sim ficam vermelhas quando != Não) */
+  .pills.risco .pill.selecionada{ background: var(--vermelho); border-color: var(--vermelho); }
+  .pills.risco .pill[data-valor="Não"].selecionada{ background: var(--verde-escuro); border-color: var(--verde-escuro); }
+
+  /* Medicações */
+  .linha-medicacao{
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 8px;
+    margin-bottom: 10px;
+    align-items: center;
+  }
+  @media (max-width: 620px){ .linha-medicacao{ grid-template-columns: 1fr; } }
+  .linha-medicacao input{
+    padding: 9px 11px;
+    border: 1.5px solid var(--cinza-borda);
+    border-radius: 8px;
+    font-size: 13px;
+    background: var(--cinza-bg);
+    outline: none;
+  }
+  .linha-medicacao input:focus{ border-color: var(--verde); background:#fff; }
+  .btn-remover-med{
+    background: var(--vermelho-bg);
+    color: var(--vermelho);
+    border: none;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    flex-shrink:0;
+  }
+
+  .modal-rodape{
+    padding: 16px 26px;
+    border-top: 1px solid var(--cinza-borda);
+    display:flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: var(--cinza-bg);
+  }
+
+  #modal-msg{
+    margin: 0 26px 14px;
+    background: var(--vermelho-bg);
+    color: var(--vermelho);
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    display:none;
+    font-weight: 500;
+  }
+  #modal-msg.sucesso{ background: var(--verde-claro); color: #047857; }
+
+  .toast{
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #111827;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    box-shadow: var(--sombra-lg);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s, transform .2s;
+  }
+  .toast.visivel{ opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+</style>
+</head>
+<body>
+
+<!-- ===================== TELA DE LOGIN ===================== -->
+<div id="tela-login">
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="frontend/assets/logo.png" alt="Logo da clínica" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <span class="logo-fallback">🏥</span>
+    </div>
+    <h1>Área do Médico</h1>
+    <p class="sub">Entre com sua conta de consultório</p>
+
+    <form id="form-login">
+      <label for="login-email">E-mail</label>
+      <input type="email" id="login-email" placeholder="admin@clinica.com" required autocomplete="username">
+
+      <label for="login-senha">Senha</label>
+      <input type="password" id="login-senha" placeholder="••••••" required autocomplete="current-password">
+
+      <button type="submit" class="btn btn-primario" style="width:100%; margin-top:20px;">Entrar</button>
+      <div id="login-erro"></div>
+    </form>
+
+    <p class="login-rodape">Acesso restrito à equipe do consultório</p>
+  </div>
+</div>
+
+<!-- ===================== PAINEL PRINCIPAL ===================== -->
+<div id="painel-principal">
+
+  <header>
+    <div class="marca">
+      <div class="logo-slot">
+        <img src="frontend/assets/logo.png" alt="Logo da clínica" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <span class="logo-fallback">🏥</span>
+      </div>
+      <div>
+        <h1>Área do Médico</h1>
+        <p>Painel administrativo de pacientes</p>
+      </div>
+    </div>
+    <div class="header-acoes">
+      <div class="header-selo">Acesso restrito</div>
+      <button class="btn-sair" id="btn-sair">Sair</button>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="stats">
+      <div class="stat-card total">
+        <div class="icone">👥</div>
+        <div>
+          <div class="valor" id="stat-total">0</div>
+          <div class="rotulo">Total de pacientes</div>
+        </div>
+      </div>
+      <div class="stat-card risco">
+        <div class="icone">⚠️</div>
+        <div>
+          <div class="valor" id="stat-risco">0</div>
+          <div class="rotulo">Com alerta de risco</div>
+        </div>
+      </div>
+      <div class="stat-card atualizados">
+        <div class="icone">📅</div>
+        <div>
+          <div class="valor" id="stat-hoje">0</div>
+          <div class="rotulo">Atualizados hoje</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="barra-acoes">
+      <input type="text" id="busca" placeholder="Buscar paciente por nome...">
+      <button class="btn btn-primario" id="btn-novo-paciente">➕ Novo paciente</button>
+    </div>
+
+    <div class="lista-pacientes" id="lista-pacientes">
+      <p class="vazio">Carregando pacientes...</p>
+    </div>
+
+    <footer>Painel administrativo · uso interno do consultório</footer>
+  </main>
+
+</div>
+
+<!-- ===================== MODAL: FICHA DO PACIENTE ===================== -->
+<div class="modal-fundo" id="modal-fundo">
+  <div class="modal-caixa">
+    <div class="modal-topo">
+      <div class="info-paciente">
+        <div class="avatar" id="modal-avatar">--</div>
+        <div>
+          <h2 id="modal-nome">Novo paciente</h2>
+          <p id="modal-meta">Preencha os dados abaixo</p>
+        </div>
+      </div>
+      <button class="btn-fechar" id="btn-fechar-modal">✕</button>
+    </div>
+
+    <div class="modal-tabs">
+      <button class="modal-tab ativa" data-aba="cadastro">Cadastro</button>
+      <button class="modal-tab" data-aba="prontuario">Prontuário</button>
+      <button class="modal-tab" data-aba="sintomas">Sintomas</button>
+      <button class="modal-tab" data-aba="exameMental">Exame mental</button>
+      <button class="modal-tab" data-aba="risco">Avaliação de risco</button>
+    </div>
+
+    <div id="modal-msg"></div>
+
+    <div class="modal-corpo">
+      <form id="form-paciente">
+
+        <!-- ABA: CADASTRO -->
+        <div class="aba ativa" data-aba="cadastro">
+          <div class="secao-titulo"><span class="badge-icone">👤</span> Dados do paciente</div>
+          <div class="campo"><label>Nome completo *</label><input type="text" id="f-nome" required placeholder="Nome do paciente"></div>
+          <div class="grade-2">
+            <div class="campo"><label>Sexo</label><input type="text" id="f-sexo" placeholder="Feminino / Masculino / Outro"></div>
+            <div class="campo"><label>Data de nascimento</label><input type="text" id="f-dataNascimento" placeholder="DD/MM/AAAA"></div>
+          </div>
+          <div class="grade-2">
+            <div class="campo"><label>Telefone</label><input type="text" id="f-telefone" placeholder="(00) 00000-0000"></div>
+            <div class="campo"><label>Contato de emergência</label><input type="text" id="f-contatoEmergencia" placeholder="Nome - Telefone"></div>
+          </div>
+          <div class="grade-2">
+            <div class="campo"><label>CPF</label><input type="text" id="f-cpf" placeholder="000.000.000-00"></div>
+            <div class="campo"><label>E-mail</label><input type="email" id="f-email" placeholder="paciente@email.com"></div>
+          </div>
+          <div class="campo"><label>Endereço</label><textarea id="f-endereco" rows="2" placeholder="Rua, número, bairro, cidade"></textarea></div>
+
+          <div class="secao-titulo"><span class="badge-icone">💊</span> Dados clínicos</div>
+          <div class="secao-sub">Uso exclusivo do consultório</div>
+          <div class="campo"><label>Comorbidades</label><textarea id="f-comorbidades" rows="2" placeholder="Ex: Hipotireoidismo"></textarea></div>
+          <div class="campo"><label>Alergias</label><textarea id="f-alergias" rows="2" placeholder="Ex: Dipirona"></textarea></div>
+          <div class="campo"><label>Hábitos</label><textarea id="f-habitos" rows="2" placeholder="Ex: Tabagismo, etilismo"></textarea></div>
+        </div>
+
+        <!-- ABA: PRONTUÁRIO -->
+        <div class="aba" data-aba="prontuario">
+          <div class="secao-titulo"><span class="badge-icone">💉</span> Medicações em uso</div>
+          <div id="lista-medicacoes"></div>
+          <button type="button" class="btn btn-secundario btn-sm" id="btn-add-medicacao" style="margin-bottom: 18px;">+ Adicionar medicação</button>
+
+          <div class="secao-titulo"><span class="badge-icone">📄</span> História da doença atual</div>
+          <div class="campo"><textarea id="f-historiaDoenca" rows="4" placeholder="Descreva a evolução do quadro..."></textarea></div>
+
+          <div class="secao-titulo"><span class="badge-icone">👁️</span> Resumo (visível ao paciente)</div>
+          <div class="secao-sub">Aparece na ficha de resumo do paciente</div>
+          <div class="campo"><label>Resumo da história</label><textarea id="f-resumoHistoria" rows="3"></textarea></div>
+          <div class="campo"><label>Resultado dos exames</label><textarea id="f-resultadoExames" rows="3"></textarea></div>
+          <div class="campo"><label>Plano terapêutico / conduta</label><textarea id="f-planoTerapeutico" rows="3"></textarea></div>
+        </div>
+
+        <!-- ABA: SINTOMAS -->
+        <div class="aba" data-aba="sintomas">
+          <div class="secao-titulo"><span class="badge-icone">📈</span> Revisão de sintomas psiquiátricos</div>
+          <div class="secao-sub">Percentual calculado a partir dos check-ins diários do paciente</div>
+
+          <div class="campo-pills" data-campo="sono">
+            <label>Sono <span class="pill-percentual" id="pct-sono"></span></label>
+            <div class="pills" data-opcoes="Normal,Insônia,Hipersonia,Fragmentado"></div>
+          </div>
+          <div class="campo-pills" data-campo="apetite">
+            <label>Apetite <span class="pill-percentual" id="pct-apetite"></span></label>
+            <div class="pills" data-opcoes="Normal,Aumentado,Reduzido"></div>
+          </div>
+          <div class="campo-pills" data-campo="libido">
+            <label>Libido</label>
+            <div class="pills" data-opcoes="Normal,Aumentado,Reduzido,Ausente"></div>
+          </div>
+          <div class="campo-pills" data-campo="humor">
+            <label>Humor <span class="pill-percentual" id="pct-humor"></span></label>
+            <div class="pills" data-opcoes="Estável,Triste,Irritado,Eufórico"></div>
+          </div>
+          <div class="campo-pills" data-campo="energia">
+            <label>Energia / Disposição <span class="pill-percentual" id="pct-energia"></span></label>
+            <div class="pills" data-opcoes="Normal,Reduzida,Aumentada"></div>
+          </div>
+          <div class="campo-pills" data-campo="concentracao">
+            <label>Concentração</label>
+            <div class="pills" data-opcoes="Boa,Regular,Prejudicada"></div>
+          </div>
+          <div class="campo-pills" data-campo="funcionalidade">
+            <label>Funcionalidade</label>
+            <div class="pills" data-opcoes="Mantida,Prejudicada,Parcialmente"></div>
+          </div>
+          <div class="campo-pills" data-campo="substanciasUso">
+            <label>Uso de substâncias</label>
+            <div class="pills" data-opcoes="Não,Álcool,Tabaco,Outras"></div>
+          </div>
+          <div class="campo" id="wrap-substancias-outras" style="display:none;">
+            <input type="text" id="f-substanciasOutrasDescricao" placeholder="Qual substância?">
+          </div>
+        </div>
+
+        <!-- ABA: EXAME DO ESTADO MENTAL -->
+        <div class="aba" data-aba="exameMental">
+          <div class="secao-titulo"><span class="badge-icone">🧠</span> Exame do estado mental</div>
+          <div class="secao-sub">Preenchimento exclusivo do médico durante a consulta</div>
+
+          <div class="campo-pills-exame" data-campo="aparencia">
+            <label>Aparência / Higiene</label>
+            <div class="pills" data-opcoes="Adequada,Descuidada,Negligenciada"></div>
+          </div>
+
+          <div class="campo-pills-exame" data-campo="atitude">
+            <label>Atitude / Comportamento</label>
+            <div class="pills" data-opcoes="Cooperativo,Desconfiado,Hostil,Agitado,Retraído"></div>
+          </div>
+
+          <div class="campo-pills-exame" data-campo="consciencia">
+            <label>Consciência</label>
+            <div class="pills" data-opcoes="Alerta,Sonolenta,Estuporosa,Comatosa"></div>
+          </div>
+
+          <div class="campo-pills-exame" data-campo="orientacao" data-multi="true">
+            <label>Orientação</label>
+            <div class="pills" data-opcoes="Tempo,Espaço,Pessoa,Situação"></div>
+          </div>
+
+          <div class="campo-pills-exame" data-campo="atencao">
+            <label>Atenção / Concentração</label>
+            <div class="pills" data-opcoes="Preservada,Distraível,Prejudicada"></div>
+          </div>
+
+          <div class="campo-pills-exame" data-campo="memoria">
+            <label>Memória</label>
+            <div class="pills" data-opcoes="Preservada,Déficit recente,Déficit remoto"></div>
+          </div>
+
+          <div class="campo-pills-exame" data-campo="fala">
+            <label>Fala</label>
+            <div class="pills" data-opcoes="Normal,Acelerada,Lentificada,Pressionada,Pobre"></div>
+          </div>
+
+          <div class="campo-pills-exame" data-campo="psicomotricidade">
+            <label>Psicomotricidade</label>
+            <div class="pills" data-opcoes="Normal,Agitada,Lentificada"></div>
+          </div>
+
+          <div class="campo"><label>Humor (relato)</label><input type="text" id="f-exameHumor" placeholder="Ex: Deprimido, eutímico, elevado..."></div>
+
+          <div class="campo-pills-exame" data-campo="afeto">
+            <label>Afeto</label>
+            <div class="pills" data-opcoes="Congruente,Incongruente,Restrito,Lábil,Aplanado"></div>
+          </div>
+
+          <div class="campo-pills-exame" data-campo="pensamentoCurso">
+            <label>Curso do pensamento</label>
+            <div class="pills" data-opcoes="Lógico,Tangencial,Circunstancial,Desorganizado"></div>
+          </div>
+          <div class="campo"><label>Conteúdo do pensamento</label><textarea id="f-pensamentoConteudo" rows="2" placeholder="Ex: Delírios, preocupações predominantes..."></textarea></div>
+
+          <div class="campo-pills-exame" data-campo="percepcao">
+            <label>Percepção</label>
+            <div class="pills" data-opcoes="Sem alterações,Alucinações"></div>
+          </div>
+          <div class="campo" id="wrap-percepcao-quais" style="display:none;">
+            <input type="text" id="f-percepcaoQuais" placeholder="Quais alucinações?">
+          </div>
+
+          <div class="campo-pills-exame" data-campo="critica">
+            <label>Crítica / Insight</label>
+            <div class="pills" data-opcoes="Preservado,Parcial,Ausente"></div>
+          </div>
+        </div>
+
+        <!-- ABA: AVALIAÇÃO DE RISCO -->
+        <div class="aba" data-aba="risco">
+          <div class="secao-titulo"><span class="badge-icone">⚠️</span> Avaliação de risco</div>
+          <div class="secao-sub">Preenchimento exclusivo do médico</div>
+
+          <div class="campo-pills" data-campo="ideacaoSuicidaResposta">
+            <label>Ideação suicida</label>
+            <div class="pills risco" data-opcoes="Não,Sim,Plano"></div>
+          </div>
+          <div class="campo" id="wrap-ideacao-obs" style="display:none;">
+            <textarea id="f-ideacaoSuicidaObs" rows="2" placeholder="Observações"></textarea>
+          </div>
+
+          <div class="campo-pills" data-campo="heteroagressaoResposta">
+            <label>Heteroagressão</label>
+            <div class="pills risco" data-opcoes="Não,Sim"></div>
+          </div>
+          <div class="campo" id="wrap-heteroagressao-funcao" style="display:none;">
+            <textarea id="f-heteroagressaoFuncao" rows="2" placeholder="Qual? (função/contexto)"></textarea>
+          </div>
+
+          <div class="campo-pills" data-campo="sintomasPsicoticosResposta">
+            <label>Sintomas psicóticos</label>
+            <div class="pills risco" data-opcoes="Não,Sim"></div>
+          </div>
+          <div class="campo" id="wrap-psicoticos-funcao" style="display:none;">
+            <textarea id="f-sintomasPsicoticosFuncao" rows="2" placeholder="Qual? (função/contexto)"></textarea>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <div class="modal-rodape">
+      <button type="button" class="btn btn-secundario" id="btn-cancelar-modal">Cancelar</button>
+      <button type="button" class="btn btn-primario" id="btn-salvar-paciente">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+const API_PADRAO = 'https://sistema-prontuario-production.up.railway.app/api'
+let token = null
+let pacientes = []
+let pacienteEmEdicao = null   // null = criando novo; objeto = editando existente
+let buscaAtual = ''
+
+// Estado dos campos "pills" (seletor de opção única) do formulário aberto
+let sintomas = { sono:'', apetite:'', libido:'', humor:'', energia:'', concentracao:'', funcionalidade:'', substanciasUso:'', substanciasOutrasDescricao:'' }
+let riscos = {
+  ideacaoSuicidaResposta:'', ideacaoSuicidaObs:'',
+  heteroagressaoResposta:'', heteroagressaoFuncao:'',
+  sintomasPsicoticosResposta:'', sintomasPsicoticosFuncao:''
+}
+let exameMental = {
+  aparencia:'', atitude:'', consciencia:'', orientacao:[], atencao:'', memoria:'',
+  fala:'', psicomotricidade:'', afeto:'', pensamentoCurso:'', percepcao:'', critica:''
+}
+let medicacoes = []
+
+const telaLogin = document.getElementById('tela-login')
+const painelPrincipal = document.getElementById('painel-principal')
+const formLogin = document.getElementById('form-login')
+const loginErroEl = document.getElementById('login-erro')
+
+const listaEl = document.getElementById('lista-pacientes')
+const buscaEl = document.getElementById('busca')
+
+const modalFundo = document.getElementById('modal-fundo')
+const modalMsgEl = document.getElementById('modal-msg')
+const formPaciente = document.getElementById('form-paciente')
+
+function getApiUrl(){
+  return API_PADRAO
+}
+
+function mostrarToast(texto){
+  const el = document.getElementById('toast')
+  el.textContent = texto
+  el.classList.add('visivel')
+  setTimeout(() => el.classList.remove('visivel'), 2600)
+}
+
+async function requisicao(caminho, opcoes = {}){
+  const resposta = await fetch(`${getApiUrl()}${caminho}`, {
+    ...opcoes,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...opcoes.headers
+    }
+  })
+
+  const corpo = await resposta.json().catch(() => ({}))
+
+  if(!resposta.ok){
+    if(resposta.status === 401){
+      encerrarSessao()
+      loginErroEl.textContent = 'Sua sessão expirou. Entre novamente.'
+      loginErroEl.style.display = 'block'
+    }
+    throw new Error(corpo.erro || 'Não foi possível completar a operação.')
+  }
+
+  return corpo
+}
+
+/* =====================================================================
+   LOGIN / SESSÃO
+   ===================================================================== */
+formLogin.addEventListener('submit', async (e) => {
+  e.preventDefault()
+  loginErroEl.style.display = 'none'
+
+  const identificador = document.getElementById('login-email').value.trim()
+  const senha = document.getElementById('login-senha').value
+
+  try{
+    const sessao = await requisicao('/autenticacao/entrar', {
+      method: 'POST',
+      body: JSON.stringify({ perfil: 'admin', identificador, senha })
+    })
+
+    if(sessao.perfil !== 'admin'){
+      throw new Error('Esta conta não tem acesso à área do médico.')
+    }
+
+    token = sessao.token
+    localStorage.setItem('tokenAdmin', token)
+    entrarNoPainel()
+  }catch(err){
+    loginErroEl.textContent = err.message
+    loginErroEl.style.display = 'block'
+  }
+})
+
+function entrarNoPainel(){
+  telaLogin.style.display = 'none'
+  painelPrincipal.style.display = 'block'
+  carregarPacientes()
+}
+
+function encerrarSessao(){
+  token = null
+  localStorage.removeItem('tokenAdmin')
+  pacientes = []
+  painelPrincipal.style.display = 'none'
+  telaLogin.style.display = 'flex'
+}
+
+document.getElementById('btn-sair').addEventListener('click', () => {
+  if(confirm('Deseja sair da área do médico?')) encerrarSessao()
+})
+
+// Ao carregar a página, se já existir um token salvo, tenta reentrar direto no painel
+const tokenSalvo = localStorage.getItem('tokenAdmin')
+if(tokenSalvo){
+  token = tokenSalvo
+  entrarNoPainel()
+}
+
+/* =====================================================================
+   LISTAGEM DE PACIENTES
+   ===================================================================== */
+async function carregarPacientes(){
+  listaEl.innerHTML = `<p class="vazio">Carregando pacientes...</p>`
+  try{
+    pacientes = await requisicao('/pacientes')
+    renderizarLista()
+  }catch(err){
+    listaEl.innerHTML = `<p class="vazio">Erro ao carregar pacientes: ${escapeHtml(err.message)}</p>`
+  }
+}
+
+buscaEl.addEventListener('input', () => {
+  buscaAtual = buscaEl.value.toLowerCase()
+  renderizarLista()
+})
+
+function calcularIdade(dataBr){
+  // dataBr no formato dd/mm/aaaa (é o que o backend devolve em dataNascimento)
+  if(!dataBr) return null
+  const [dia, mes, ano] = dataBr.split('/').map(Number)
+  if(!dia || !mes || !ano) return null
+  const hoje = new Date()
+  let idade = hoje.getFullYear() - ano
+  const aindaNaoFezAniversario = (hoje.getMonth()+1 < mes) || (hoje.getMonth()+1 === mes && hoje.getDate() < dia)
+  if(aindaNaoFezAniversario) idade--
+  return idade
+}
+
+function temAlertaRisco(p){
+  const r = p.riscos || {}
+  return (r.ideacaoSuicida?.resposta && r.ideacaoSuicida.resposta !== 'Não')
+      || (r.heteroagressao?.resposta === 'Sim')
+      || (r.sintomasPsicoticos?.resposta === 'Sim')
+}
+
+function foiAtualizadoHoje(p){
+  if(!p.atualizadoEm) return false
+  const hoje = new Date().toLocaleDateString('pt-BR', { timeZone: 'UTC' })
+  return p.atualizadoEm === hoje
+}
+
+function renderizarLista(){
+  document.getElementById('stat-total').textContent = pacientes.length
+  document.getElementById('stat-risco').textContent = pacientes.filter(temAlertaRisco).length
+  document.getElementById('stat-hoje').textContent = pacientes.filter(foiAtualizadoHoje).length
+
+  let filtrados = pacientes
+  if(buscaAtual){
+    filtrados = filtrados.filter(p => p.nome.toLowerCase().includes(buscaAtual))
+  }
+
+  if(filtrados.length === 0){
+    listaEl.innerHTML = `<p class="vazio">Nenhum paciente encontrado.</p>`
+    return
+  }
+
+  listaEl.innerHTML = filtrados.map(p => {
+    const idade = calcularIdade(p.dataNascimento)
+    const alerta = temAlertaRisco(p)
+    return `
+      <div class="card-paciente" onclick="abrirModalEdicao('${p.id}')">
+        <div class="info">
+          <div class="avatar">${escapeHtml(p.fotoIniciais || iniciais(p.nome))}</div>
+          <div>
+            <h3>${escapeHtml(p.nome)}${idade !== null ? ' · ' + idade + ' anos' : ''}</h3>
+            <p>${escapeHtml(p.telefone || 'Sem telefone')} · atualizado em ${escapeHtml(p.atualizadoEm || '—')}</p>
+          </div>
+        </div>
+        <div class="tags-risco">
+          ${alerta ? `<span class="tag alerta">⚠ Risco</span>` : `<span class="tag ok">Estável</span>`}
+        </div>
+      </div>
+    `
+  }).join('')
+}
+
+function iniciais(nome=''){
+  const partes = nome.trim().split(/\s+/)
+  const a = partes[0]?.[0] || ''
+  const b = partes.length > 1 ? partes[partes.length-1][0] : ''
+  return (a+b).toUpperCase()
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div')
+  div.textContent = str ?? ''
+  return div.innerHTML
+}
+
+/* =====================================================================
+   PILLS (seletores de opção única) — construídos uma vez no load
+   ===================================================================== */
+document.querySelectorAll('.pills').forEach(container => {
+  const opcoes = container.dataset.opcoes.split(',')
+  container.innerHTML = opcoes.map(op => `<button type="button" class="pill" data-valor="${op}">${op}</button>`).join('')
+})
+
+document.querySelectorAll('.campo-pills').forEach(campoEl => {
+  const nomeCampo = campoEl.dataset.campo
+  campoEl.querySelectorAll('.pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const valor = pill.dataset.valor
+      const jaSelecionada = pill.classList.contains('selecionada')
+
+      campoEl.querySelectorAll('.pill').forEach(p => p.classList.remove('selecionada'))
+
+      if(nomeCampo.startsWith('substancias') || nomeCampo.includes('Resposta')){
+        riscos[nomeCampo] !== undefined ? (riscos[nomeCampo] = jaSelecionada ? '' : valor) : null
+        sintomas[nomeCampo] !== undefined ? (sintomas[nomeCampo] = jaSelecionada ? '' : valor) : null
+      }else{
+        sintomas[nomeCampo] = jaSelecionada ? '' : valor
+      }
+
+      if(!jaSelecionada) pill.classList.add('selecionada')
+
+      atualizarCamposCondicionais()
+    })
+  })
+})
+
+function selecionarPill(nomeCampo, valor){
+  const campoEl = document.querySelector(`.campo-pills[data-campo="${nomeCampo}"]`)
+  if(!campoEl) return
+  campoEl.querySelectorAll('.pill').forEach(p => {
+    p.classList.toggle('selecionada', p.dataset.valor === valor)
+  })
+}
+
+function atualizarCamposCondicionais(){
+  document.getElementById('wrap-substancias-outras').style.display = sintomas.substanciasUso === 'Outras' ? 'block' : 'none'
+  document.getElementById('wrap-ideacao-obs').style.display = (riscos.ideacaoSuicidaResposta && riscos.ideacaoSuicidaResposta !== 'Não') ? 'block' : 'none'
+  document.getElementById('wrap-heteroagressao-funcao').style.display = riscos.heteroagressaoResposta === 'Sim' ? 'block' : 'none'
+  document.getElementById('wrap-psicoticos-funcao').style.display = riscos.sintomasPsicoticosResposta === 'Sim' ? 'block' : 'none'
+}
+
+/* ===== Pills da aba "Exame do estado mental" (algumas de seleção única, "Orientação" é múltipla) ===== */
+document.querySelectorAll('.campo-pills-exame').forEach(campoEl => {
+  const nomeCampo = campoEl.dataset.campo
+  const multi = campoEl.dataset.multi === 'true'
+  campoEl.querySelectorAll('.pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const valor = pill.dataset.valor
+      if(multi){
+        const idx = exameMental[nomeCampo].indexOf(valor)
+        if(idx === -1){
+          exameMental[nomeCampo].push(valor)
+          pill.classList.add('selecionada')
+        }else{
+          exameMental[nomeCampo].splice(idx, 1)
+          pill.classList.remove('selecionada')
+        }
+      }else{
+        const jaSelecionada = pill.classList.contains('selecionada')
+        campoEl.querySelectorAll('.pill').forEach(p => p.classList.remove('selecionada'))
+        exameMental[nomeCampo] = jaSelecionada ? '' : valor
+        if(!jaSelecionada) pill.classList.add('selecionada')
+      }
+      atualizarCamposCondicionaisExame()
+    })
+  })
+})
+
+function selecionarPillsExame(nomeCampo, valores){
+  const campoEl = document.querySelector(`.campo-pills-exame[data-campo="${nomeCampo}"]`)
+  if(!campoEl) return
+  const selecionados = Array.isArray(valores) ? valores : [valores]
+  campoEl.querySelectorAll('.pill').forEach(p => {
+    p.classList.toggle('selecionada', selecionados.includes(p.dataset.valor))
+  })
+}
+
+function atualizarCamposCondicionaisExame(){
+  document.getElementById('wrap-percepcao-quais').style.display = exameMental.percepcao === 'Alucinações' ? 'block' : 'none'
+}
+
+function renderizarMedicacoes(){
+  const container = document.getElementById('lista-medicacoes')
+  if(medicacoes.length === 0){
+    container.innerHTML = `<p style="font-size:12.5px; color:var(--texto-suave); margin-bottom:12px;">Nenhuma medicação cadastrada.</p>`
+    return
+  }
+  container.innerHTML = medicacoes.map((m, i) => `
+    <div class="linha-medicacao">
+      <input type="text" placeholder="Medicamento" value="${escapeHtml(m.nome)}" oninput="medicacoes[${i}].nome=this.value">
+      <input type="text" placeholder="Dosagem" value="${escapeHtml(m.dosagem)}" oninput="medicacoes[${i}].dosagem=this.value">
+      <input type="text" placeholder="Horário" value="${escapeHtml(m.horario)}" oninput="medicacoes[${i}].horario=this.value">
+      <button type="button" class="btn-remover-med" onclick="removerMedicacao(${i})">✕</button>
+    </div>
+  `).join('')
+}
+
+function removerMedicacao(i){
+  medicacoes.splice(i, 1)
+  renderizarMedicacoes()
+}
+
+document.getElementById('btn-add-medicacao').addEventListener('click', () => {
+  medicacoes.push({ nome:'', dosagem:'', horario:'' })
+  renderizarMedicacoes()
+})
+
+document.querySelectorAll('.modal-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('ativa'))
+    document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'))
+    tab.classList.add('ativa')
+    document.querySelector(`.aba[data-aba="${tab.dataset.aba}"]`).classList.add('ativa')
+  })
+})
+
+document.getElementById('btn-novo-paciente').addEventListener('click', () => abrirModalNovo())
+document.getElementById('btn-fechar-modal').addEventListener('click', fecharModal)
+document.getElementById('btn-cancelar-modal').addEventListener('click', fecharModal)
+modalFundo.addEventListener('click', (e) => { if(e.target === modalFundo) fecharModal() })
+
+function limparFormulario(){
+  formPaciente.reset()
+  sintomas = { sono:'', apetite:'', libido:'', humor:'', energia:'', concentracao:'', funcionalidade:'', substanciasUso:'', substanciasOutrasDescricao:'' }
+  riscos = {
+    ideacaoSuicidaResposta:'', ideacaoSuicidaObs:'',
+    heteroagressaoResposta:'', heteroagressaoFuncao:'',
+    sintomasPsicoticosResposta:'', sintomasPsicoticosFuncao:''
+  }
+  exameMental = {
+    aparencia:'', atitude:'', consciencia:'', orientacao:[], atencao:'', memoria:'',
+    fala:'', psicomotricidade:'', afeto:'', pensamentoCurso:'', percepcao:'', critica:''
+  }
+  document.getElementById('f-exameHumor').value = ''
+  document.getElementById('f-pensamentoConteudo').value = ''
+  document.getElementById('f-percepcaoQuais').value = ''
+  medicacoes = []
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('selecionada'))
+  atualizarCamposCondicionais()
+  atualizarCamposCondicionaisExame()
+  renderizarMedicacoes()
+  modalMsgEl.style.display = 'none'
+  modalMsgEl.classList.remove('sucesso')
+  document.querySelectorAll('.modal-tab')[0].click()
+}
+
+function abrirModalNovo(){
+  pacienteEmEdicao = null
+  limparFormulario()
+  document.getElementById('modal-avatar').textContent = '--'
+  document.getElementById('modal-nome').textContent = 'Novo paciente'
+  document.getElementById('modal-meta').textContent = 'Preencha os dados abaixo'
+  modalFundo.classList.add('aberto')
+}
+
+async function abrirModalEdicao(id){
+  try{
+    const p = await requisicao(`/pacientes/${id}`)
+    pacienteEmEdicao = p
+    limparFormulario()
+
+    document.getElementById('f-nome').value = p.nome || ''
+    document.getElementById('f-sexo').value = p.sexo || ''
+    document.getElementById('f-dataNascimento').value = p.dataNascimento || ''
+    document.getElementById('f-telefone').value = p.telefone || ''
+    document.getElementById('f-contatoEmergencia').value = p.contatoEmergencia || ''
+    document.getElementById('f-cpf').value = p.cpf || ''
+    document.getElementById('f-email').value = p.email || ''
+    document.getElementById('f-endereco').value = p.endereco || ''
+    document.getElementById('f-comorbidades').value = p.admin?.comorbidades || ''
+    document.getElementById('f-alergias').value = p.admin?.alergias || ''
+    document.getElementById('f-habitos').value = p.admin?.habitos || ''
+
+    document.getElementById('f-historiaDoenca').value = p.historiaDoenca || ''
+    document.getElementById('f-resumoHistoria').value = p.resumoHistoria || ''
+    document.getElementById('f-resultadoExames').value = p.resultadoExames || ''
+    document.getElementById('f-planoTerapeutico').value = p.planoTerapeutico || ''
+
+    medicacoes = (p.medicacoes || []).map(m => ({ nome: m.nome || '', dosagem: m.dosagem || '', horario: m.horario || '' }))
+    renderizarMedicacoes()
+
+    const rs = p.revisaoSintomas || {}
+    sintomas.sono = rs.sono || ''
+    sintomas.apetite = rs.apetite || ''
+    sintomas.libido = rs.libido || ''
+    sintomas.humor = rs.humor || ''
+    sintomas.energia = rs.energia || ''
+    sintomas.concentracao = rs.concentracao || ''
+    sintomas.funcionalidade = rs.funcionalidade || ''
+    sintomas.substanciasUso = rs.substancias?.uso || ''
+    sintomas.substanciasOutrasDescricao = rs.substancias?.outrasDescricao || ''
+    document.getElementById('f-substanciasOutrasDescricao').value = sintomas.substanciasOutrasDescricao
+
+    Object.entries({sono:sintomas.sono, apetite:sintomas.apetite, libido:sintomas.libido, humor:sintomas.humor, energia:sintomas.energia, concentracao:sintomas.concentracao, funcionalidade:sintomas.funcionalidade, substanciasUso:sintomas.substanciasUso})
+      .forEach(([campo, valor]) => { if(valor) selecionarPill(campo, valor) })
+
+    const rk = p.riscos || {}
+    riscos.ideacaoSuicidaResposta = rk.ideacaoSuicida?.resposta || ''
+    riscos.ideacaoSuicidaObs = rk.ideacaoSuicida?.obs || ''
+    riscos.heteroagressaoResposta = rk.heteroagressao?.resposta || ''
+    riscos.heteroagressaoFuncao = rk.heteroagressao?.funcao || ''
+    riscos.sintomasPsicoticosResposta = rk.sintomasPsicoticos?.resposta || ''
+    riscos.sintomasPsicoticosFuncao = rk.sintomasPsicoticos?.funcao || ''
+    document.getElementById('f-ideacaoSuicidaObs').value = riscos.ideacaoSuicidaObs
+    document.getElementById('f-heteroagressaoFuncao').value = riscos.heteroagressaoFuncao
+    document.getElementById('f-sintomasPsicoticosFuncao').value = riscos.sintomasPsicoticosFuncao
+
+    if(riscos.ideacaoSuicidaResposta) selecionarPill('ideacaoSuicidaResposta', riscos.ideacaoSuicidaResposta)
+    if(riscos.heteroagressaoResposta) selecionarPill('heteroagressaoResposta', riscos.heteroagressaoResposta)
+    if(riscos.sintomasPsicoticosResposta) selecionarPill('sintomasPsicoticosResposta', riscos.sintomasPsicoticosResposta)
+
+    const em = p.exameMental || {}
+    exameMental.aparencia = em.aparencia || ''
+    exameMental.atitude = em.atitude || ''
+    exameMental.consciencia = em.consciencia || ''
+    exameMental.orientacao = Array.isArray(em.orientacao) ? em.orientacao : []
+    exameMental.atencao = em.atencao || ''
+    exameMental.memoria = em.memoria || ''
+    exameMental.fala = em.fala || ''
+    exameMental.psicomotricidade = em.psicomotricidade || ''
+    exameMental.afeto = em.afeto || ''
+    exameMental.pensamentoCurso = em.pensamentoCurso || ''
+    exameMental.percepcao = em.percepcao || ''
+    exameMental.critica = em.critica || ''
+    document.getElementById('f-exameHumor').value = em.humor || ''
+    document.getElementById('f-pensamentoConteudo').value = em.pensamentoConteudo || ''
+    document.getElementById('f-percepcaoQuais').value = em.percepcaoQuais || ''
+
+    selecionarPillsExame('aparencia', exameMental.aparencia)
+    selecionarPillsExame('atitude', exameMental.atitude)
+    selecionarPillsExame('consciencia', exameMental.consciencia)
+    selecionarPillsExame('orientacao', exameMental.orientacao)
+    selecionarPillsExame('atencao', exameMental.atencao)
+    selecionarPillsExame('memoria', exameMental.memoria)
+    selecionarPillsExame('fala', exameMental.fala)
+    selecionarPillsExame('psicomotricidade', exameMental.psicomotricidade)
+    selecionarPillsExame('afeto', exameMental.afeto)
+    selecionarPillsExame('pensamentoCurso', exameMental.pensamentoCurso)
+    selecionarPillsExame('percepcao', exameMental.percepcao)
+    selecionarPillsExame('critica', exameMental.critica)
+    atualizarCamposCondicionaisExame()
+
+    const medias = calcularMediasCheckins(p.checkins || [])
+    setarPercentual('sono', medias.sono)
+    setarPercentual('apetite', medias.apetite)
+    setarPercentual('humor', medias.humor)
+    setarPercentual('energia', medias.energia)
+
+    atualizarCamposCondicionais()
+
+    document.getElementById('modal-avatar').textContent = p.fotoIniciais || iniciais(p.nome)
+    document.getElementById('modal-nome').textContent = p.nome
+    const idade = calcularIdade(p.dataNascimento)
+    document.getElementById('modal-meta').textContent = `${idade !== null ? idade + ' anos · ' : ''}atualizado em ${p.atualizadoEm || '—'}`
+
+    modalFundo.classList.add('aberto')
+  }catch(err){
+    mostrarToast('Erro ao abrir paciente: ' + err.message)
+  }
+}
+
+function calcularMediasCheckins(checkins){
+  function media(campo){
+    const valores = checkins.map(c => c[campo]).filter(v => typeof v === 'number')
+    if(valores.length === 0) return null
+    return Math.round(valores.reduce((a,b) => a+b, 0) / valores.length)
+  }
+  return { sono: media('sono'), apetite: media('apetite'), humor: media('humor'), energia: media('energia') }
+}
+
+function setarPercentual(campo, valor){
+  const el = document.getElementById('pct-' + campo)
+  if(el) el.textContent = (valor !== null && valor !== undefined) ? `${valor}%` : ''
+}
+
+function fecharModal(){
+  modalFundo.classList.remove('aberto')
+}
+
+
+document.getElementById('btn-salvar-paciente').addEventListener('click', async () => {
+  modalMsgEl.style.display = 'none'
+  modalMsgEl.classList.remove('sucesso')
+
+  const nome = document.getElementById('f-nome').value.trim()
+  if(!nome){
+    modalMsgEl.textContent = 'Informe o nome do paciente.'
+    modalMsgEl.style.display = 'block'
+    document.querySelectorAll('.modal-tab')[0].click()
+    return
+  }
+
+  const payload = {
+    nome,
+    sexo: document.getElementById('f-sexo').value.trim(),
+    dataNascimento: document.getElementById('f-dataNascimento').value.trim(),
+    telefone: document.getElementById('f-telefone').value.trim(),
+    contatoEmergencia: document.getElementById('f-contatoEmergencia').value.trim(),
+    cpf: document.getElementById('f-cpf').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    endereco: document.getElementById('f-endereco').value.trim(),
+    admin: {
+      comorbidades: document.getElementById('f-comorbidades').value.trim(),
+      alergias: document.getElementById('f-alergias').value.trim(),
+      habitos: document.getElementById('f-habitos').value.trim(),
+    },
+    resumoHistoria: document.getElementById('f-resumoHistoria').value.trim(),
+    resultadoExames: document.getElementById('f-resultadoExames').value.trim(),
+    planoTerapeutico: document.getElementById('f-planoTerapeutico').value.trim(),
+    medicacoes: medicacoes.filter(m => m.nome.trim() !== ''),
+    historiaDoenca: document.getElementById('f-historiaDoenca').value.trim(),
+    revisaoSintomas: {
+      sono: sintomas.sono,
+      apetite: sintomas.apetite,
+      libido: sintomas.libido,
+      humor: sintomas.humor,
+      energia: sintomas.energia,
+      concentracao: sintomas.concentracao,
+      funcionalidade: sintomas.funcionalidade,
+      substancias: {
+        uso: sintomas.substanciasUso,
+        outrasDescricao: document.getElementById('f-substanciasOutrasDescricao').value.trim(),
+      }
+    },
+    riscos: {
+      ideacaoSuicida: { resposta: riscos.ideacaoSuicidaResposta, obs: document.getElementById('f-ideacaoSuicidaObs').value.trim() },
+      heteroagressao: { resposta: riscos.heteroagressaoResposta, funcao: document.getElementById('f-heteroagressaoFuncao').value.trim() },
+      sintomasPsicoticos: { resposta: riscos.sintomasPsicoticosResposta, funcao: document.getElementById('f-sintomasPsicoticosFuncao').value.trim() },
+    },
+    exameMental: {
+      aparencia: exameMental.aparencia,
+      atitude: exameMental.atitude,
+      consciencia: exameMental.consciencia,
+      orientacao: exameMental.orientacao,
+      atencao: exameMental.atencao,
+      memoria: exameMental.memoria,
+      fala: exameMental.fala,
+      psicomotricidade: exameMental.psicomotricidade,
+      humor: document.getElementById('f-exameHumor').value.trim(),
+      afeto: exameMental.afeto,
+      pensamentoCurso: exameMental.pensamentoCurso,
+      pensamentoConteudo: document.getElementById('f-pensamentoConteudo').value.trim(),
+      percepcao: exameMental.percepcao,
+      percepcaoQuais: document.getElementById('f-percepcaoQuais').value.trim(),
+      critica: exameMental.critica,
+    }
+  }
+
+  const botao = document.getElementById('btn-salvar-paciente')
+  botao.disabled = true
+  botao.textContent = 'Salvando...'
+
+  try{
+    if(pacienteEmEdicao){
+      await requisicao(`/pacientes/${pacienteEmEdicao.id}`, { method: 'PUT', body: JSON.stringify(payload) })
+      mostrarToast('Prontuário atualizado com sucesso.')
+    }else{
+      await requisicao('/pacientes', { method: 'POST', body: JSON.stringify(payload) })
+      mostrarToast('Paciente cadastrado com sucesso.')
+    }
+    fecharModal()
+    await carregarPacientes()
+  }catch(err){
+    modalMsgEl.textContent = err.message
+    modalMsgEl.style.display = 'block'
+  }finally{
+    botao.disabled = false
+    botao.textContent = 'Salvar'
+  }
+})
+
+atualizarCamposCondicionais()
+atualizarCamposCondicionaisExame()
+renderizarMedicacoes()
+</script>
+
+</body>
+</html>
