@@ -5,6 +5,13 @@ function formatarData(data) {
   return d.toLocaleDateString("pt-BR", { timeZone: "UTC" });
 }
 
+function formatarHora(data) {
+  if (!data) return "";
+  const d = new Date(data);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString("pt-BR", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
+}
+
 /**
  * Recebe a linha da tabela `pacientes`, mais os arrays de medicações e
  * check-ins já carregados, e devolve o objeto no mesmo formato que o
@@ -102,6 +109,7 @@ function formatarPaciente(linhaPaciente, medicacoes = [], checkins = [], consult
     consultas: consultas.map((c) => ({
       id: c.id,
       data: formatarData(c.data),
+      hora: formatarHora(c.criado_em),
       historiaDoenca: c.historia_doenca,
       planoTerapeutico: c.plano_terapeutico,
       revisaoSintomas: {

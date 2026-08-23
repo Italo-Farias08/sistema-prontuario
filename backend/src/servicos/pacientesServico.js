@@ -26,7 +26,7 @@ async function buscarCheckins(idPaciente) {
 
 async function buscarConsultas(idPaciente) {
   const resultado = await bancoDados.query(
-    "SELECT * FROM consultas WHERE paciente_id = $1 ORDER BY data DESC",
+    "SELECT * FROM consultas WHERE paciente_id = $1 ORDER BY criado_em DESC",
     [idPaciente]
   );
   return resultado.rows;
@@ -371,13 +371,13 @@ async function upsertConsulta(cliente, idPaciente, dados) {
   const colunas = Object.keys(campos);
   const valores = Object.values(campos);
   const placeholdersInsert = colunas.map((_, i) => `$${i + 3}`).join(", ");
-  const setClausulas = colunas.map((col) => `${col} = COALESCE(EXCLUDED.${col}, consultas.${col})`).join(",\n      ");
 
+  // Sempre INSERT (nunca atualiza uma consulta existente): cada
+  // salvamento vira uma seção nova no histórico, mesmo que seja no
+  // mesmo dia — assim dá pra comparar duas avaliações lado a lado.
   await cliente.query(
     `INSERT INTO consultas (paciente_id, data, ${colunas.join(", ")})
-     VALUES ($1, $2, ${placeholdersInsert})
-     ON CONFLICT (paciente_id, data) DO UPDATE SET
-       ${setClausulas}`,
+     VALUES ($1, $2, ${placeholdersInsert})`,
     [idPaciente, formatarDataHojeIso(), ...valores]
   );
 }

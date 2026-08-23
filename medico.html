@@ -554,8 +554,9 @@
     border: 1px solid var(--cinza-borda);
     border-left: 4px solid var(--verde);
     border-radius: 10px;
-    padding: 14px 16px;
+    padding: 0;
     margin-bottom: 12px;
+    overflow: hidden;
   }
   .consulta-card.tem-risco{ border-left-color: var(--vermelho); }
   .consulta-cabecalho{
@@ -563,15 +564,47 @@
     align-items:center;
     justify-content: space-between;
     gap: 10px;
-    margin-bottom: 8px;
     flex-wrap: wrap;
+    padding: 13px 16px;
+    cursor: pointer;
+    list-style: none;
   }
+  .consulta-cabecalho::-webkit-details-marker{ display:none; }
+  .consulta-cabecalho:hover{ background: var(--cinza-bg); }
   .consulta-data{
     font-size: 13px;
     font-weight: 800;
     color: var(--verde-escuro);
   }
-  .consulta-resumo{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom: 8px; }
+  .consulta-numero{
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--texto-suave);
+  }
+  .consulta-corpo{ padding: 4px 16px 16px; }
+  .detalhe-secao{ margin-bottom: 14px; }
+  .detalhe-secao:last-child{ margin-bottom: 0; }
+  .detalhe-secao.risco{
+    background: var(--vermelho-bg);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .detalhe-titulo{
+    font-size: 11.5px;
+    font-weight: 800;
+    color: var(--texto);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    margin-bottom: 6px;
+  }
+  .detalhe-linha{
+    font-size: 12.5px;
+    color: var(--texto);
+    padding: 3px 0;
+    line-height: 1.4;
+  }
+  .detalhe-rotulo{ color: var(--texto-suave); font-weight: 600; }
+  .detalhe-valor{ font-weight: 500; }
   .consulta-chip{
     font-size: 11px;
     font-weight: 700;
@@ -588,7 +621,6 @@
     line-height: 1.5;
     white-space: pre-wrap;
   }
-  .consulta-evolucao.vazia{ color: var(--texto-suave); font-style: italic; }
 
   .toast{
     position: fixed;
@@ -1238,6 +1270,11 @@ function temAlertaRiscoConsulta(c){
       || (r.sintomasPsicoticos?.resposta === 'Sim')
 }
 
+function linhaDetalhe(rotulo, valor){
+  if(!valor) return ''
+  return `<div class="detalhe-linha"><span class="detalhe-rotulo">${escapeHtml(rotulo)}:</span> <span class="detalhe-valor">${escapeHtml(valor)}</span></div>`
+}
+
 function renderizarHistoricoConsultas(consultas){
   const container = document.getElementById('lista-historico-consultas')
   if(!consultas || consultas.length === 0){
@@ -1245,30 +1282,66 @@ function renderizarHistoricoConsultas(consultas){
     return
   }
 
-  container.innerHTML = consultas.map(c => {
+  container.innerHTML = consultas.map((c, indice) => {
     const rs = c.revisaoSintomas || {}
-    const chips = []
-    if(rs.humor) chips.push(`Humor: ${escapeHtml(rs.humor)}`)
-    if(rs.sono) chips.push(`Sono: ${escapeHtml(rs.sono)}`)
-    if(rs.energia) chips.push(`Energia: ${escapeHtml(rs.energia)}`)
-    if(rs.apetite) chips.push(`Apetite: ${escapeHtml(rs.apetite)}`)
-
+    const rk = c.riscos || {}
+    const em = c.exameMental || {}
     const alerta = temAlertaRiscoConsulta(c)
-    const chipsHtml = chips.map(t => `<span class="consulta-chip">${t}</span>`).join('')
-      + (alerta ? `<span class="consulta-chip risco">⚠ Risco identificado</span>` : '')
 
-    const evolucao = c.historiaDoenca
-      ? escapeHtml(c.historiaDoenca)
-      : `<span class="consulta-evolucao vazia">Sem anotação de evolução para esta data.</span>`
+    const sintomasHtml = [
+      linhaDetalhe('Sono', rs.sono),
+      linhaDetalhe('Apetite', rs.apetite),
+      linhaDetalhe('Libido', rs.libido),
+      linhaDetalhe('Humor', rs.humor),
+      linhaDetalhe('Energia', rs.energia),
+      linhaDetalhe('Concentração', rs.concentracao),
+      linhaDetalhe('Funcionalidade', rs.funcionalidade),
+      linhaDetalhe('Uso de substâncias', rs.substancias?.uso === 'Outras' && rs.substancias?.outrasDescricao ? `Outras — ${rs.substancias.outrasDescricao}` : rs.substancias?.uso),
+    ].join('')
+
+    const exameHtml = [
+      linhaDetalhe('Aparência / Higiene', em.aparencia),
+      linhaDetalhe('Atitude / Comportamento', em.atitude),
+      linhaDetalhe('Consciência', em.consciencia),
+      linhaDetalhe('Orientação', Array.isArray(em.orientacao) && em.orientacao.length ? em.orientacao.join(', ') : ''),
+      linhaDetalhe('Atenção / Concentração', em.atencao),
+      linhaDetalhe('Memória', em.memoria),
+      linhaDetalhe('Fala', em.fala),
+      linhaDetalhe('Psicomotricidade', em.psicomotricidade),
+      linhaDetalhe('Humor (relato)', em.humor),
+      linhaDetalhe('Afeto', em.afeto),
+      linhaDetalhe('Curso do pensamento', em.pensamentoCurso),
+      linhaDetalhe('Conteúdo do pensamento', em.pensamentoConteudo),
+      linhaDetalhe('Percepção', em.percepcao === 'Alucinações' && em.percepcaoQuais ? `Alucinações — ${em.percepcaoQuais}` : em.percepcao),
+      linhaDetalhe('Crítica / Insight', em.critica),
+    ].join('')
+
+    const riscoHtml = [
+      linhaDetalhe('Ideação suicida', rk.ideacaoSuicida?.obs ? `${rk.ideacaoSuicida?.resposta} — ${rk.ideacaoSuicida.obs}` : rk.ideacaoSuicida?.resposta),
+      linhaDetalhe('Heteroagressão', rk.heteroagressao?.funcao ? `${rk.heteroagressao?.resposta} — ${rk.heteroagressao.funcao}` : rk.heteroagressao?.resposta),
+      linhaDetalhe('Sintomas psicóticos', rk.sintomasPsicoticos?.funcao ? `${rk.sintomasPsicoticos?.resposta} — ${rk.sintomasPsicoticos.funcao}` : rk.sintomasPsicoticos?.resposta),
+    ].join('')
+
+    const secoes = [
+      sintomasHtml ? `<div class="detalhe-secao"><div class="detalhe-titulo">📈 Revisão de sintomas</div>${sintomasHtml}</div>` : '',
+      exameHtml ? `<div class="detalhe-secao"><div class="detalhe-titulo">🧠 Exame do estado mental</div>${exameHtml}</div>` : '',
+      riscoHtml ? `<div class="detalhe-secao ${alerta ? 'risco' : ''}"><div class="detalhe-titulo">⚠️ Avaliação de risco</div>${riscoHtml}</div>` : '',
+      c.historiaDoenca ? `<div class="detalhe-secao"><div class="detalhe-titulo">📄 Evolução</div><div class="consulta-evolucao">${escapeHtml(c.historiaDoenca)}</div></div>` : '',
+      c.planoTerapeutico ? `<div class="detalhe-secao"><div class="detalhe-titulo">🩺 Plano terapêutico / conduta</div><div class="consulta-evolucao">${escapeHtml(c.planoTerapeutico)}</div></div>` : '',
+    ].join('')
+
+    const rotuloSecao = `Seção ${consultas.length - indice}`
 
     return `
-      <div class="consulta-card ${alerta ? 'tem-risco' : ''}">
-        <div class="consulta-cabecalho">
-          <div class="consulta-data">📅 ${escapeHtml(c.data)}</div>
+      <details class="consulta-card ${alerta ? 'tem-risco' : ''}" ${indice === 0 ? 'open' : ''}>
+        <summary class="consulta-cabecalho">
+          <span class="consulta-data">📅 ${escapeHtml(c.data)}${c.hora ? ' às ' + escapeHtml(c.hora) : ''} <span class="consulta-numero">· ${rotuloSecao}</span></span>
+          ${alerta ? `<span class="consulta-chip risco">⚠ Risco identificado</span>` : ''}
+        </summary>
+        <div class="consulta-corpo">
+          ${secoes || '<p style="font-size:12.5px; color:var(--texto-suave);">Nenhum detalhe clínico registrado nesta seção.</p>'}
         </div>
-        ${chipsHtml ? `<div class="consulta-resumo">${chipsHtml}</div>` : ''}
-        <div class="consulta-evolucao">${evolucao}</div>
-      </div>
+      </details>
     `
   }).join('')
 }
