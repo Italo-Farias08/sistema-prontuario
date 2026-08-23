@@ -383,7 +383,17 @@ async function upsertConsulta(cliente, idPaciente, dados) {
 }
 
 function formatarDataHojeIso() {
-  return new Date().toISOString().slice(0, 10);
+  // Usa o horário local do Brasil (não UTC) pra calcular "hoje": salvar
+  // depois das ~21h em Pernambuco já seria "amanhã" em UTC, o que
+  // colocaria a consulta na data errada.
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Recife",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const mapa = Object.fromEntries(partes.map((p) => [p.type, p.value]));
+  return `${mapa.year}-${mapa.month}-${mapa.day}`;
 }
 
 module.exports = {

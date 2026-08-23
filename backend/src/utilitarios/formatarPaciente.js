@@ -9,7 +9,10 @@ function formatarHora(data) {
   if (!data) return "";
   const d = new Date(data);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString("pt-BR", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
+  // criado_em é TIMESTAMPTZ (guardado em UTC pelo Postgres). Precisa
+  // converter pro horário local do Brasil, senão a hora exibida fica
+  // 3h adiantada em relação à hora real da consulta.
+  return d.toLocaleTimeString("pt-BR", { timeZone: "America/Recife", hour: "2-digit", minute: "2-digit" });
 }
 
 /**

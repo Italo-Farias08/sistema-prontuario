@@ -379,6 +379,33 @@
   }
   .modal-topo h2{ font-size: 17px; font-weight: 800; }
   .modal-topo p{ font-size: 12.5px; opacity: .9; margin-top: 2px; }
+  .btn-nova-secao{
+    font-size: 12.5px;
+    font-weight: 700;
+    background: rgba(255,255,255,.16);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.35);
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .btn-nova-secao:hover{ background: rgba(255,255,255,.28); }
+
+  .seg-resumo{
+    margin: 18px 26px 0;
+    background: var(--verde-suave-bg);
+    border: 1px solid var(--cinza-borda);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 12.5px;
+    color: var(--texto);
+    line-height: 1.65;
+  }
+  .seg-resumo .seg-nome{ font-weight: 800; color: var(--verde-escuro); font-size: 13.5px; }
+  .seg-resumo .seg-linha b{ color: var(--texto-suave); font-weight: 600; }
+
   .btn-fechar{
     background: rgba(255,255,255,.16);
     border: none;
@@ -740,6 +767,7 @@
           <p id="modal-meta">Preencha os dados abaixo</p>
         </div>
       </div>
+      <button class="btn-nova-secao" id="btn-nova-secao">+ Nova seção</button>
       <button class="btn-fechar" id="btn-fechar-modal">✕</button>
     </div>
 
@@ -959,6 +987,105 @@
   </div>
 </div>
 
+<!-- ===================== MODAL: NOVA SEÇÃO (RETORNO RÁPIDO) ===================== -->
+<div class="modal-fundo" id="modal-seguimento-fundo">
+  <div class="modal-caixa" style="max-width:620px;">
+    <div class="modal-topo">
+      <div class="info-paciente">
+        <div class="avatar" id="seg-avatar">--</div>
+        <div>
+          <h2>Nova seção</h2>
+          <p>Retorno — preencha só o que ajuda a comparar a evolução</p>
+        </div>
+      </div>
+      <button class="btn-fechar" id="btn-fechar-seguimento">✕</button>
+    </div>
+
+    <div class="seg-resumo" id="seg-resumo-paciente"></div>
+
+    <div id="seg-msg" style="margin: 14px 26px 0; background: var(--vermelho-bg); color: var(--vermelho); font-size: 13px; padding: 10px 12px; border-radius: 9px; display:none; font-weight: 500;"></div>
+
+    <div class="modal-corpo" style="max-height:60vh;">
+
+      <div class="secao-titulo"><span class="badge-icone">📈</span> Evolução desde a última consulta</div>
+      <div class="secao-sub">Só o que costuma variar entre visitas — o resto já está no cadastro</div>
+
+      <div class="campo-pills-seg" data-campo="sono">
+        <label>Sono</label>
+        <div class="pills" data-opcoes="Normal,Insônia,Hipersonia,Fragmentado"></div>
+      </div>
+      <div class="campo-pills-seg" data-campo="apetite">
+        <label>Apetite</label>
+        <div class="pills" data-opcoes="Normal,Aumentado,Reduzido"></div>
+      </div>
+      <div class="campo-pills-seg" data-campo="humor">
+        <label>Humor</label>
+        <div class="pills" data-opcoes="Estável,Triste,Irritado,Eufórico"></div>
+      </div>
+      <div class="campo-pills-seg" data-campo="energia">
+        <label>Energia / Disposição</label>
+        <div class="pills" data-opcoes="Normal,Reduzida,Aumentada"></div>
+      </div>
+      <div class="campo-pills-seg" data-campo="concentracao">
+        <label>Concentração</label>
+        <div class="pills" data-opcoes="Boa,Regular,Prejudicada"></div>
+      </div>
+      <div class="campo-pills-seg" data-campo="funcionalidade">
+        <label>Funcionalidade</label>
+        <div class="pills" data-opcoes="Mantida,Prejudicada,Parcialmente"></div>
+      </div>
+
+      <div class="secao-titulo"><span class="badge-icone">🧠</span> Exame — achados que costumam mudar</div>
+      <div class="campo"><label>Humor (relato)</label><input type="text" id="seg-exameHumor" placeholder="Ex: Deprimido, eutímico, elevado..."></div>
+      <div class="campo-pills-seg" data-campo="afeto">
+        <label>Afeto</label>
+        <div class="pills" data-opcoes="Congruente,Incongruente,Restrito,Lábil,Aplanado"></div>
+      </div>
+      <div class="campo-pills-seg" data-campo="psicomotricidade">
+        <label>Psicomotricidade</label>
+        <div class="pills" data-opcoes="Normal,Agitada,Lentificada"></div>
+      </div>
+
+      <div class="secao-titulo"><span class="badge-icone">⚠️</span> Avaliação de risco</div>
+      <div class="secao-sub">Reavaliado em toda consulta, por segurança</div>
+
+      <div class="campo-pills-seg" data-campo="ideacaoSuicidaResposta">
+        <label>Ideação suicida</label>
+        <div class="pills risco" data-opcoes="Não,Sim,Plano"></div>
+      </div>
+      <div class="campo" id="seg-wrap-ideacao-obs" style="display:none;">
+        <textarea id="seg-ideacaoSuicidaObs" rows="2" placeholder="Observações"></textarea>
+      </div>
+
+      <div class="campo-pills-seg" data-campo="heteroagressaoResposta">
+        <label>Heteroagressão</label>
+        <div class="pills risco" data-opcoes="Não,Sim"></div>
+      </div>
+      <div class="campo" id="seg-wrap-heteroagressao-funcao" style="display:none;">
+        <textarea id="seg-heteroagressaoFuncao" rows="2" placeholder="Qual? (função/contexto)"></textarea>
+      </div>
+
+      <div class="campo-pills-seg" data-campo="sintomasPsicoticosResposta">
+        <label>Sintomas psicóticos</label>
+        <div class="pills risco" data-opcoes="Não,Sim"></div>
+      </div>
+      <div class="campo" id="seg-wrap-psicoticos-funcao" style="display:none;">
+        <textarea id="seg-sintomasPsicoticosFuncao" rows="2" placeholder="Qual? (função/contexto)"></textarea>
+      </div>
+
+      <div class="secao-titulo"><span class="badge-icone">📄</span> Evolução / conduta</div>
+      <div class="campo"><label>O que mudou desde a última consulta</label><textarea id="seg-historiaDoenca" rows="3" placeholder="Descreva a evolução..."></textarea></div>
+      <div class="campo"><label>Plano terapêutico / conduta</label><textarea id="seg-planoTerapeutico" rows="3"></textarea></div>
+
+    </div>
+
+    <div class="modal-rodape">
+      <button type="button" class="btn btn-secundario" id="btn-cancelar-seguimento">Cancelar</button>
+      <button type="button" class="btn btn-primario" id="btn-salvar-seguimento">Salvar nova seção</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -981,6 +1108,11 @@ let exameMental = {
   fala:'', psicomotricidade:'', afeto:'', pensamentoCurso:'', percepcao:'', critica:''
 }
 let medicacoes = []
+let seguimento = {
+  sono:'', apetite:'', humor:'', energia:'', concentracao:'', funcionalidade:'',
+  afeto:'', psicomotricidade:'',
+  ideacaoSuicidaResposta:'', heteroagressaoResposta:'', sintomasPsicoticosResposta:''
+}
 
 const telaLogin = document.getElementById('tela-login')
 const painelPrincipal = document.getElementById('painel-principal')
@@ -1261,6 +1393,139 @@ function atualizarCamposCondicionaisExame(){
 }
 
 /* =====================================================================
+   MODAL "NOVA SEÇÃO" — retorno rápido, só campos de evolução + risco
+   ===================================================================== */
+document.querySelectorAll('.campo-pills-seg').forEach(campoEl => {
+  const nomeCampo = campoEl.dataset.campo
+  campoEl.querySelectorAll('.pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const valor = pill.dataset.valor
+      const jaSelecionada = pill.classList.contains('selecionada')
+      campoEl.querySelectorAll('.pill').forEach(p => p.classList.remove('selecionada'))
+      seguimento[nomeCampo] = jaSelecionada ? '' : valor
+      if(!jaSelecionada) pill.classList.add('selecionada')
+      atualizarCamposCondicionaisSeg()
+    })
+  })
+})
+
+function atualizarCamposCondicionaisSeg(){
+  document.getElementById('seg-wrap-ideacao-obs').style.display = (seguimento.ideacaoSuicidaResposta && seguimento.ideacaoSuicidaResposta !== 'Não') ? 'block' : 'none'
+  document.getElementById('seg-wrap-heteroagressao-funcao').style.display = seguimento.heteroagressaoResposta === 'Sim' ? 'block' : 'none'
+  document.getElementById('seg-wrap-psicoticos-funcao').style.display = seguimento.sintomasPsicoticosResposta === 'Sim' ? 'block' : 'none'
+}
+
+function limparFormularioSeguimento(){
+  seguimento = {
+    sono:'', apetite:'', humor:'', energia:'', concentracao:'', funcionalidade:'',
+    afeto:'', psicomotricidade:'',
+    ideacaoSuicidaResposta:'', heteroagressaoResposta:'', sintomasPsicoticosResposta:''
+  }
+  document.getElementById('seg-exameHumor').value = ''
+  document.getElementById('seg-ideacaoSuicidaObs').value = ''
+  document.getElementById('seg-heteroagressaoFuncao').value = ''
+  document.getElementById('seg-sintomasPsicoticosFuncao').value = ''
+  document.getElementById('seg-historiaDoenca').value = ''
+  document.getElementById('seg-planoTerapeutico').value = ''
+  document.querySelectorAll('.campo-pills-seg .pill').forEach(p => p.classList.remove('selecionada'))
+  atualizarCamposCondicionaisSeg()
+  const msgEl = document.getElementById('seg-msg')
+  msgEl.style.display = 'none'
+}
+
+function abrirModalSeguimento(){
+  if(!pacienteEmEdicao) return
+  limparFormularioSeguimento()
+
+  const p = pacienteEmEdicao
+  const idade = calcularIdade(p.dataNascimento)
+  const ultimaSecao = (p.consultas && p.consultas[0]) ? p.consultas[0].data : null
+
+  document.getElementById('seg-avatar').textContent = p.fotoIniciais || iniciais(p.nome)
+  document.getElementById('seg-resumo-paciente').innerHTML = `
+    <div class="seg-nome">${escapeHtml(p.nome)}${idade !== null ? ' · ' + idade + ' anos' : ''}</div>
+    <div class="seg-linha"><b>Telefone:</b> ${escapeHtml(p.telefone || 'não informado')}</div>
+    ${p.admin?.comorbidades ? `<div class="seg-linha"><b>Comorbidades:</b> ${escapeHtml(p.admin.comorbidades)}</div>` : ''}
+    ${p.admin?.alergias ? `<div class="seg-linha"><b>Alergias:</b> ${escapeHtml(p.admin.alergias)}</div>` : ''}
+    ${p.admin?.habitos ? `<div class="seg-linha"><b>Hábitos:</b> ${escapeHtml(p.admin.habitos)}</div>` : ''}
+    ${ultimaSecao ? `<div class="seg-linha"><b>Última seção registrada:</b> ${escapeHtml(ultimaSecao)}</div>` : `<div class="seg-linha"><b>Última seção registrada:</b> esta será a primeira</div>`}
+  `
+
+  document.getElementById('modal-seguimento-fundo').classList.add('aberto')
+}
+
+function fecharModalSeguimento(){
+  document.getElementById('modal-seguimento-fundo').classList.remove('aberto')
+}
+
+document.getElementById('btn-nova-secao').addEventListener('click', abrirModalSeguimento)
+document.getElementById('btn-fechar-seguimento').addEventListener('click', fecharModalSeguimento)
+document.getElementById('btn-cancelar-seguimento').addEventListener('click', fecharModalSeguimento)
+document.getElementById('modal-seguimento-fundo').addEventListener('click', (e) => {
+  if(e.target.id === 'modal-seguimento-fundo') fecharModalSeguimento()
+})
+
+document.getElementById('btn-salvar-seguimento').addEventListener('click', async () => {
+  const msgEl = document.getElementById('seg-msg')
+  msgEl.style.display = 'none'
+  if(!pacienteEmEdicao) return
+
+  const payload = {
+    historiaDoenca: document.getElementById('seg-historiaDoenca').value.trim(),
+    planoTerapeutico: document.getElementById('seg-planoTerapeutico').value.trim(),
+    revisaoSintomas: {
+      sono: seguimento.sono,
+      apetite: seguimento.apetite,
+      humor: seguimento.humor,
+      energia: seguimento.energia,
+      concentracao: seguimento.concentracao,
+      funcionalidade: seguimento.funcionalidade,
+    },
+    exameMental: {
+      humor: document.getElementById('seg-exameHumor').value.trim(),
+      afeto: seguimento.afeto,
+      psicomotricidade: seguimento.psicomotricidade,
+    },
+    riscos: {
+      ideacaoSuicida: { resposta: seguimento.ideacaoSuicidaResposta, obs: document.getElementById('seg-ideacaoSuicidaObs').value.trim() },
+      heteroagressao: { resposta: seguimento.heteroagressaoResposta, funcao: document.getElementById('seg-heteroagressaoFuncao').value.trim() },
+      sintomasPsicoticos: { resposta: seguimento.sintomasPsicoticosResposta, funcao: document.getElementById('seg-sintomasPsicoticosFuncao').value.trim() },
+    }
+  }
+
+  const temAlgo = payload.historiaDoenca || payload.planoTerapeutico
+    || Object.values(payload.revisaoSintomas).some(v => v)
+    || payload.exameMental.humor || payload.exameMental.afeto || payload.exameMental.psicomotricidade
+    || payload.riscos.ideacaoSuicida.resposta || payload.riscos.heteroagressao.resposta || payload.riscos.sintomasPsicoticos.resposta
+
+  if(!temAlgo){
+    msgEl.textContent = 'Preencha ao menos um campo para registrar a nova seção.'
+    msgEl.style.display = 'block'
+    return
+  }
+
+  const botao = document.getElementById('btn-salvar-seguimento')
+  botao.disabled = true
+  botao.textContent = 'Salvando...'
+
+  try{
+    const idPaciente = pacienteEmEdicao.id
+    await requisicao(`/pacientes/${idPaciente}`, { method: 'PUT', body: JSON.stringify(payload) })
+    mostrarToast('Nova seção registrada no histórico.')
+    fecharModalSeguimento()
+    await carregarPacientes()
+    await abrirModalEdicao(idPaciente)
+    document.querySelector('.modal-tab[data-aba="historico"]').click()
+  }catch(err){
+    msgEl.textContent = err.message
+    msgEl.style.display = 'block'
+  }finally{
+    botao.disabled = false
+    botao.textContent = 'Salvar nova seção'
+  }
+})
+
+/* =====================================================================
    HISTÓRICO DE CONSULTAS — uma seção por visita, para comparar evolução
    ===================================================================== */
 function temAlertaRiscoConsulta(c){
@@ -1418,6 +1683,7 @@ function abrirModalNovo(){
   document.getElementById('modal-avatar').textContent = '--'
   document.getElementById('modal-nome').textContent = 'Novo paciente'
   document.getElementById('modal-meta').textContent = 'Preencha os dados abaixo'
+  document.getElementById('btn-nova-secao').style.display = 'none'
   modalFundo.classList.add('aberto')
 }
 
@@ -1521,6 +1787,7 @@ async function abrirModalEdicao(id){
     document.getElementById('modal-nome').textContent = p.nome
     const idade = calcularIdade(p.dataNascimento)
     document.getElementById('modal-meta').textContent = `${idade !== null ? idade + ' anos · ' : ''}atualizado em ${p.atualizadoEm || '—'}`
+    document.getElementById('btn-nova-secao').style.display = 'inline-block'
 
     modalFundo.classList.add('aberto')
   }catch(err){
