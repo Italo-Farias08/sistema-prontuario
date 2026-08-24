@@ -1,84 +1,159 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
-  Image,
   FlatList,
   TextInput,
   Pressable,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { cores, fontes, raio, espacamento, sombra } from "../../tema/tema";
 import Avatar from "../../componentes/Avatar";
 import { useAutenticacao } from "../../contexto/ContextoAutenticacao";
-
-// TODO: trocar pelas chamadas reais quando o backend de mensagens existir
-// (ex: servicos/dadosServico -> buscarMensagens(idConversa), enviarMensagem(...)).
-// Por enquanto a tela funciona com um mock local só pra já deixar o fluxo
-// (navegação + UI + botão de chamada) pronto e testável.
-const MENSAGENS_MOCK = [
-  { id: "1", autor: "medico", texto: "Olá! Como você está se sentindo hoje?", hora: "09:12" },
-  { id: "2", autor: "cliente", texto: "Bom dia, doutor! Estou bem melhor essa semana.", hora: "09:14" },
-  { id: "3", autor: "medico", texto: "Que ótimo saber disso. Conseguiu manter o sono regular?", hora: "09:15" },
-];
+import { listarMensagens, iniciarChamada, obterToken } from "../../servicos/dadosServico";
+import { URL_BASE_WS } from "../../configuracao/api";
 
 const NOME_MEDICO = "Dr. Domingos Ribeiro";
+
+function formatarHora(iso) {
+  try {
+    return new Date(iso).toLocaleTimeString("pt-BR", {
+      timeZone: "America/Recife",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
 
 export default function TelaChatCliente({ navigation }) {
   const { sessao } = useAutenticacao();
   const insets = useSafeAreaInsets();
   const listaRef = useRef(null);
+  const wsRef = useRef(null);
+  const timerReconexao = useRef(null);
+  const montado = useRef(true);
 
-  const [mensagens, setMensagens] = useState(MENSAGENS_MOCK);
+  const [mensagens, setMensagens] = useState([]);
   const [texto, setTexto] = useState("");
+  const [carregando, setCarregando] = useState(true);
+  const [conectado, setConectado] = useState(false);
+  const [chamadaRecebida, setChamadaRecebida] = useState(null);
+  const [enviandoChamada, setEnviandoChamada] = useState(false);
+
+  const conectarWebSocket = useCallback(() => {
+    const token = obterToken();
+    if (!token) return;
+
+    const ws = new WebSocket(
+      `${URL_BASE_WS}?token=${encodeURIComponent(token)}&pacienteId=${sessao.idCliente}`
+    );
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      if (montado.current) setConectado(true);
+    };
+
+    ws.onclose = () => {
+      if (!montado.current) return;
+      setConectado(false);
+      // Tenta reconectar sozinho depois de alguns segundos (rede caiu, app voltou do background etc.)
+      timerReconexao.current = setTimeout(conectarWebSocket, 3000);
+    };
+
+    ws.onerror = () => {
+      ws.close();
+    };
+
+    ws.onmessage = (evento) => {
+      if (!montado.current) return;
+      let dados;
+      try {
+        dados = JSON.parse(evento.data);
+      } catch {
+        return;
+      }
+
+      if (dados.tipo === "mensagem") {
+        setMensagens((atual) => [...atual, dados.mensagem]);
+        requestAnimationFrame(() => listaRef.current?.scrollToEnd({ animated: true }));
+      }
+
+      if (dados.tipo === "chamada") {
+        setChamadaRecebida(dados.url);
+      }
+    };
+  }, [sessao.idCliente]);
 
   useEffect(() => {
-    // TODO: buscarMensagens(sessao.idCliente) aqui quando o endpoint existir
-  }, []);
+    montado.current = true;
+
+    (async () => {
+      try {
+        const historico = await listarMensagens(sessao.idCliente);
+        if (montado.current) setMensagens(historico);
+      } catch {
+        // Se falhar, a conversa só começa vazia — não trava a tela por isso.
+      } finally {
+        if (montado.current) setCarregando(false);
+      }
+    })();
+
+    conectarWebSocket();
+
+    return () => {
+      montado.current = false;
+      clearTimeout(timerReconexao.current);
+      wsRef.current?.close();
+    };
+  }, [conectarWebSocket, sessao.idCliente]);
 
   function enviarMensagem() {
     const conteudo = texto.trim();
     if (!conteudo) return;
 
-    const nova = {
-      id: String(Date.now()),
-      autor: "cliente",
-      texto: conteudo,
-      hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-    };
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      return; // sem conexão — o texto fica no campo, a pessoa tenta de novo em instantes
+    }
 
-    setMensagens((atual) => [...atual, nova]);
+    wsRef.current.send(JSON.stringify({ tipo: "mensagem", texto: conteudo }));
     setTexto("");
-    // TODO: enviarMensagem(sessao.idCliente, conteudo) aqui quando o endpoint existir
-
-    requestAnimationFrame(() => listaRef.current?.scrollToEnd({ animated: true }));
   }
 
-  function iniciarChamadaVideo() {
-    // TODO: navegar pra tela real de chamada (ex: TelaChamadaVideo) passando
-    // a sala/room do provedor de vídeo (Daily.co) assim que a integração
-    // estiver pronta (requer Dev Client / EAS Build, ver conversa anterior).
-    navigation.navigate("ChamadaVideoCliente", { idConversa: sessao.idCliente });
+  async function iniciarChamadaVideo() {
+    if (enviandoChamada) return;
+    setEnviandoChamada(true);
+    try {
+      const sala = await iniciarChamada(sessao.idCliente);
+      navigation.navigate("ChamadaVideoCliente", { url: sala.url });
+    } catch {
+      // TODO: mostrar um toast/alerta de erro, se quiser algo mais visível
+    } finally {
+      setEnviandoChamada(false);
+    }
+  }
+
+  function entrarNaChamadaRecebida() {
+    const url = chamadaRecebida;
+    setChamadaRecebida(null);
+    navigation.navigate("ChamadaVideoCliente", { url });
   }
 
   function renderMensagem({ item }) {
-    const ehCliente = item.autor === "cliente";
+    const ehCliente = item.remetente === "cliente";
     return (
-      <View
-        style={[
-          styles.bolha,
-          ehCliente ? styles.bolhaCliente : styles.bolhaMedico,
-        ]}
-      >
+      <View style={[styles.bolha, ehCliente ? styles.bolhaCliente : styles.bolhaMedico]}>
         <Text style={[styles.textoMensagem, ehCliente && styles.textoMensagemCliente]}>
           {item.texto}
         </Text>
         <Text style={[styles.horaMensagem, ehCliente && styles.horaMensagemCliente]}>
-          {item.hora}
+          {formatarHora(item.criadoEm)}
         </Text>
       </View>
     );
@@ -100,24 +175,45 @@ export default function TelaChatCliente({ navigation }) {
           <Avatar iniciais="DR" size={38} />
           <View style={{ marginLeft: espacamento.pequeno }}>
             <Text style={styles.nomeMedico} numberOfLines={1}>{NOME_MEDICO}</Text>
-            <Text style={styles.statusMedico}>Online</Text>
+            <Text style={styles.statusMedico}>{conectado ? "Online" : "Conectando..."}</Text>
           </View>
         </View>
 
-        <Pressable onPress={iniciarChamadaVideo} hitSlop={10} style={styles.botaoVideo}>
-          <Ionicons name="videocam" size={20} color={cores.branco} />
+        <Pressable onPress={iniciarChamadaVideo} hitSlop={10} style={styles.botaoVideo} disabled={enviandoChamada}>
+          {enviandoChamada ? (
+            <ActivityIndicator size="small" color={cores.branco} />
+          ) : (
+            <Ionicons name="videocam" size={20} color={cores.branco} />
+          )}
         </Pressable>
       </View>
 
+      {/* Aviso de chamada recebida */}
+      {chamadaRecebida && (
+        <Pressable onPress={entrarNaChamadaRecebida} style={styles.faixaChamada}>
+          <Ionicons name="videocam" size={16} color={cores.branco} />
+          <Text style={styles.faixaChamadaTexto}>O médico iniciou uma chamada — toque para entrar</Text>
+        </Pressable>
+      )}
+
       {/* Lista de mensagens */}
-      <FlatList
-        ref={listaRef}
-        data={mensagens}
-        keyExtractor={(item) => item.id}
-        renderItem={renderMensagem}
-        contentContainerStyle={styles.listaConteudo}
-        onContentSizeChange={() => listaRef.current?.scrollToEnd({ animated: false })}
-      />
+      {carregando ? (
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <ActivityIndicator color={cores.destaque} />
+        </View>
+      ) : (
+        <FlatList
+          ref={listaRef}
+          data={mensagens}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMensagem}
+          contentContainerStyle={styles.listaConteudo}
+          onContentSizeChange={() => listaRef.current?.scrollToEnd({ animated: false })}
+          ListEmptyComponent={
+            <Text style={styles.vazio}>Nenhuma mensagem ainda. Diga um oi 👋</Text>
+          }
+        />
+      )}
 
       {/* Campo de envio */}
       <View style={[styles.campoEnvio, { paddingBottom: insets.bottom + espacamento.pequeno }]}>
@@ -161,10 +257,28 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
+  faixaChamada: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: cores.destaque,
+    paddingVertical: 10,
+  },
+  faixaChamadaTexto: { color: cores.branco, fontFamily: fontes.textoMedio, fontSize: 12.5 },
+
   listaConteudo: {
     paddingHorizontal: espacamento.medio,
     paddingVertical: espacamento.medio,
     gap: espacamento.pequeno,
+    flexGrow: 1,
+  },
+  vazio: {
+    textAlign: "center",
+    marginTop: espacamento.grande,
+    fontFamily: fontes.texto,
+    fontSize: 13.5,
+    color: cores.textoClaro,
   },
   bolha: {
     maxWidth: "78%",

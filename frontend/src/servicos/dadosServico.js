@@ -6,6 +6,10 @@ export function definirToken(token) {
   tokenAtual = token;
 }
 
+export function obterToken() {
+  return tokenAtual;
+}
+
 let aoSessaoExpirar = null;
 
 export function registrarAoSessaoExpirar(callback) {
@@ -113,6 +117,14 @@ export async function registrarCheckin(id, { humor, sono, energia, apetite, ansi
     method: "POST",
     body: JSON.stringify({ humor, sono, energia, apetite, ansiedade }),
   });
+}
+
+export async function listarMensagens(idPaciente) {
+  return requisicao(`/pacientes/${idPaciente}/mensagens`);
+}
+
+export async function iniciarChamada(idPaciente) {
+  return requisicao(`/pacientes/${idPaciente}/chamada`, { method: "POST" });
 }
 
 export function encerrarSessao() {

@@ -12,7 +12,17 @@ const variaveisAmbiente = {
     emailRemetente: process.env.BREVO_EMAIL_REMETENTE || "nao-responda@clinica.com",
     nomeRemetente: process.env.BREVO_NOME_REMETENTE || "Sistema de Prontuário",
   },
+
+  daily: {
+    apiKey: process.env.DAILY_API_KEY,
+  },
 };
+
+if (!variaveisAmbiente.daily.apiKey) {
+  console.warn(
+    "Aviso: DAILY_API_KEY não foi definida. A chamada de vídeo vai falhar até você configurar uma conta gratuita em https://dashboard.daily.co e colar a chave de API no .env."
+  );
+}
 
 if (!variaveisAmbiente.urlBancoDados) {
   console.warn(

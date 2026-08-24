@@ -52,9 +52,45 @@ CREATE TABLE IF NOT EXISTS pacientes (
   sintomas_psicoticos_resposta    VARCHAR(20),
   sintomas_psicoticos_funcao      TEXT,
 
+  -- Exame do estado mental (uso exclusivo do médico)
+  exame_aparencia                 VARCHAR(50),
+  exame_atitude                   VARCHAR(50),
+  exame_consciencia               VARCHAR(50),
+  exame_orientacao                TEXT[],
+  exame_atencao                   VARCHAR(50),
+  exame_memoria                   VARCHAR(50),
+  exame_fala                      VARCHAR(50),
+  exame_psicomotricidade          VARCHAR(50),
+  exame_humor                     VARCHAR(100),
+  exame_afeto                     VARCHAR(50),
+  exame_pensamento_curso          VARCHAR(50),
+  exame_pensamento_conteudo       TEXT,
+  exame_percepcao                 VARCHAR(50),
+  exame_percepcao_quais           TEXT,
+  exame_critica                   VARCHAR(50),
+
   criado_em                       TIMESTAMPTZ NOT NULL DEFAULT now(),
   atualizado_em                   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Garante as colunas do exame do estado mental também em bancos onde a
+-- tabela `pacientes` já existia antes desta atualização (migração segura
+-- de rodar de novo, sem apagar dados existentes).
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS exame_aparencia VARCHAR(50);
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS exame_atitude VARCHAR(50);
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS exame_consciencia VARCHAR(50);
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS exame_orientacao TEXT[];
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS exame_atencao VARCHAR(50);
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS exame_memoria VARCHAR(50);
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS exame_fala VARCHAR(50);
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS exame_psicomotricidade VARCHAR(50);
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS exame_humor VARCHAR(100);
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS exame_afeto VARCHAR(50);
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS exame_pensamento_curso VARCHAR(50);
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS exame_pensamento_conteudo TEXT;
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS exame_percepcao VARCHAR(50);
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS exame_percepcao_quais TEXT;
+ALTER TABLE pacientes ADD COLUMN IF NOT EXISTS exame_critica VARCHAR(50);
 
 -- ---------------------------------------------------------------------
 -- Tabela: usuarios
@@ -130,6 +166,85 @@ CREATE TABLE IF NOT EXISTS checkins (
 
 CREATE INDEX IF NOT EXISTS idx_checkins_paciente_id ON checkins(paciente_id);
 CREATE INDEX IF NOT EXISTS idx_checkins_paciente_data ON checkins(paciente_id, data);
+
+-- ---------------------------------------------------------------------
+-- Tabela: consultas
+-- Um registro por visita do paciente ao consultório (histórico clínico).
+-- Guarda a "fotografia" da revisão de sintomas, exame do estado mental,
+-- avaliação de risco e evolução daquele dia específico, para permitir
+-- comparar a evolução do paciente entre consultas.
+-- Cada salvamento do prontuário vira uma nova consulta no histórico
+-- (mesmo que seja no mesmo dia), para permitir comparar duas avaliações
+-- lado a lado sem uma sobrescrever a outra.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS consultas (
+  id                              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  paciente_id                     UUID NOT NULL REFERENCES pacientes(id) ON DELETE CASCADE,
+  data                             DATE NOT NULL DEFAULT CURRENT_DATE,
+
+  historia_doenca                 TEXT,
+  plano_terapeutico               TEXT,
+
+  sono                             VARCHAR(50),
+  apetite                          VARCHAR(50),
+  libido                           VARCHAR(50),
+  humor                            VARCHAR(50),
+  energia                          VARCHAR(50),
+  concentracao                     VARCHAR(50),
+  funcionalidade                   VARCHAR(50),
+  uso_substancias                  VARCHAR(50),
+  outras_substancias_descricao     TEXT,
+
+  ideacao_suicida_resposta         VARCHAR(20),
+  ideacao_suicida_observacao       TEXT,
+  heteroagressao_resposta          VARCHAR(20),
+  heteroagressao_funcao            TEXT,
+  sintomas_psicoticos_resposta     VARCHAR(20),
+  sintomas_psicoticos_funcao       TEXT,
+
+  exame_aparencia                  VARCHAR(50),
+  exame_atitude                    VARCHAR(50),
+  exame_consciencia                VARCHAR(50),
+  exame_orientacao                 TEXT[],
+  exame_atencao                    VARCHAR(50),
+  exame_memoria                    VARCHAR(50),
+  exame_fala                       VARCHAR(50),
+  exame_psicomotricidade           VARCHAR(50),
+  exame_humor                      VARCHAR(100),
+  exame_afeto                      VARCHAR(50),
+  exame_pensamento_curso           VARCHAR(50),
+  exame_pensamento_conteudo        TEXT,
+  exame_percepcao                  VARCHAR(50),
+  exame_percepcao_quais            TEXT,
+  exame_critica                    VARCHAR(50),
+
+  criado_em                        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_consultas_paciente_id ON consultas(paciente_id);
+CREATE INDEX IF NOT EXISTS idx_consultas_paciente_data ON consultas(paciente_id, data);
+CREATE INDEX IF NOT EXISTS idx_consultas_paciente_criado_em ON consultas(paciente_id, criado_em);
+
+-- Migração segura: remove a trava de "uma consulta por dia" em bancos
+-- onde a tabela já existia com essa restrição de uma versão anterior.
+ALTER TABLE consultas DROP CONSTRAINT IF EXISTS consultas_paciente_id_data_key;
+
+-- ---------------------------------------------------------------------
+-- Tabela: mensagens
+-- Conversa por texto entre o consultório (admin) e o paciente (cliente).
+-- Entregue em tempo real via WebSocket; esta tabela guarda o histórico
+-- pra carregar quando o chat é aberto.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS mensagens (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  paciente_id       UUID NOT NULL REFERENCES pacientes(id) ON DELETE CASCADE,
+  remetente         VARCHAR(10) NOT NULL CHECK (remetente IN ('admin', 'cliente')),
+  texto             TEXT NOT NULL,
+  criado_em         TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_mensagens_paciente_id ON mensagens(paciente_id);
+CREATE INDEX IF NOT EXISTS idx_mensagens_paciente_criado_em ON mensagens(paciente_id, criado_em);
 
 -- ---------------------------------------------------------------------
 -- Gatilho: atualiza pacientes.atualizado_em automaticamente

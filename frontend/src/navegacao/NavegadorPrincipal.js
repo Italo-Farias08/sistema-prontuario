@@ -19,6 +19,7 @@ import TelaInicioCliente from "../telas/cliente/TelaInicioCliente";
 import TelaInfoMedicaCliente from "../telas/cliente/TelaInfoMedicaCliente";
 import TelaMeusDadosCliente from "../telas/cliente/TelaMeusDadosCliente";
 import TelaChatCliente from "../telas/cliente/TelaChatCliente";
+import TelaChamadaVideoCliente from "../telas/cliente/TelaChamadaVideoCliente";
 
 const Stack = createNativeStackNavigator();
 
@@ -139,6 +140,12 @@ export default function NavegadorPrincipal() {
               name="ChatCliente"
               component={TelaChatCliente}
               options={{ title: "Chat" }}
+            />
+
+            <Stack.Screen
+              name="ChamadaVideoCliente"
+              component={TelaChamadaVideoCliente}
+              options={{ headerShown: false, presentation: "fullScreenModal" }}
             />
           </>
         )}
