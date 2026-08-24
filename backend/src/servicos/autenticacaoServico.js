@@ -35,6 +35,13 @@ async function autenticar({ perfil, identificador, senha }) {
 
   const usuario = resultado.rows[0];
   if (!usuario) {
+    // DEBUG TEMP: nenhuma linha bateu com perfil + email/cpf informados.
+    console.log("[DEBUG login] usuário não encontrado", {
+      perfil,
+      identificadorNormalizado,
+      somenteDigitos,
+      linhasRetornadas: resultado.rows.length,
+    });
     const erro = new Error("Credenciais inválidas.");
     erro.status = 401;
     throw erro;
@@ -42,6 +49,13 @@ async function autenticar({ perfil, identificador, senha }) {
 
   const senhaConfere = await conferirSenha(senha, usuario.senha_hash);
   if (!senhaConfere) {
+    // DEBUG TEMP: usuário foi encontrado, mas o hash não bateu.
+    console.log("[DEBUG login] usuário encontrado, senha não confere", {
+      idUsuario: usuario.id_usuario,
+      email: usuario.email,
+      prefixoHash: usuario.senha_hash?.slice(0, 7),
+      tamanhoHash: usuario.senha_hash?.length,
+    });
     const erro = new Error("Credenciais inválidas.");
     erro.status = 401;
     throw erro;
