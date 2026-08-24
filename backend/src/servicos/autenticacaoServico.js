@@ -16,14 +16,21 @@ async function autenticar({ perfil, identificador, senha }) {
     throw erro;
   }
 
+  // Mesma normalização usada em cadastrar(): sem isso, um e-mail com
+  // espaço ou maiúscula (comum em autocapitalize de teclado mobile)
+  // não bate com o que está salvo no banco e o login falha mesmo com
+  // a senha correta. O CPF também é comparado sem máscara.
+  const identificadorNormalizado = identificador.trim().toLowerCase();
+  const somenteDigitos = identificadorNormalizado.replace(/\D/g, "");
+
   const resultado = await bancoDados.query(
     `SELECT u.id AS id_usuario, u.perfil, u.senha_hash, u.paciente_id, u.email, u.email_verificado
        FROM usuarios u
        LEFT JOIN pacientes p ON p.id = u.paciente_id
       WHERE u.perfil = $1
-        AND (u.email = $2 OR p.cpf = $2)
+        AND (u.email = $2 OR (p.cpf IS NOT NULL AND regexp_replace(p.cpf, '\\D', '', 'g') = $3))
       LIMIT 1`,
-    [perfil, identificador]
+    [perfil, identificadorNormalizado, somenteDigitos]
   );
 
   const usuario = resultado.rows[0];
@@ -238,13 +245,16 @@ async function solicitarRedefinicaoSenha({ identificador }) {
     throw erro;
   }
 
+  const identificadorNormalizado = identificador.trim().toLowerCase();
+  const somenteDigitos = identificadorNormalizado.replace(/\D/g, "");
+
   const resultado = await bancoDados.query(
     `SELECT u.email, u.paciente_id, u.perfil
        FROM usuarios u
        LEFT JOIN pacientes p ON p.id = u.paciente_id
-      WHERE u.email = $1 OR p.cpf = $1
+      WHERE u.email = $1 OR (p.cpf IS NOT NULL AND regexp_replace(p.cpf, '\\D', '', 'g') = $2)
       LIMIT 1`,
-    [identificador.trim()]
+    [identificadorNormalizado, somenteDigitos]
   );
 
   const usuario = resultado.rows[0];
