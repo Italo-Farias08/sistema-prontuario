@@ -14,7 +14,7 @@ app.use(express.json());
 // precisa vir ANTES do app.use("/api", rotas) e do rotaNaoEncontrada, senão
 // qualquer GET pra /medico.html cai direto no "rota não encontrada" antes
 // de o Express sequer checar se existe um arquivo com esse nome na pasta.
-app.use(express.static(path.join(__dirname, "..", "public")));
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/api", rotas);
 
