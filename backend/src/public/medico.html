@@ -138,6 +138,33 @@
     display:none;
     font-weight: 500;
   }
+  .form-erro{
+    margin-top: 14px;
+    background: var(--vermelho-bg);
+    color: var(--vermelho);
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    display:none;
+    font-weight: 500;
+  }
+  .form-ok{
+    margin-top: 14px;
+    background: var(--verde-claro);
+    color: var(--verde-escuro);
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    display:none;
+    font-weight: 500;
+  }
+  .login-link{
+    color: var(--verde);
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .login-link:hover{ text-decoration: underline; }
 
   /* ===================== PAINEL PRINCIPAL ===================== */
   #painel-principal{ display:none; }
@@ -774,7 +801,7 @@
 
 <!-- ===================== TELA DE LOGIN ===================== -->
 <div id="tela-login">
-  <div class="login-card">
+  <div class="login-card" id="login-card-entrar">
     <div class="login-logo">
       <img src="frontend/assets/logo.png" alt="Logo da clínica" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
       <span class="logo-fallback">🏥</span>
@@ -793,9 +820,51 @@
       <div id="login-erro"></div>
     </form>
 
-    <p class="login-rodape">Acesso restrito à equipe do consultório</p>
+    <p class="login-rodape"><a href="#" class="login-link" id="link-esqueci-senha">Esqueci minha senha</a></p>
+    <p class="login-rodape">Acesso restrito</p>
+  </div>
+
+  <!-- Esqueci a senha — passo 1: informar o e-mail da conta -->
+  <div class="login-card" id="login-card-esqueci-email" style="display:none;">
+    <h1>Esqueci minha senha</h1>
+    <p class="sub">Informe o e-mail da sua conta de consultório. Enviaremos um código de verificação.</p>
+
+    <form id="form-esqueci-email">
+      <label for="esqueci-email">E-mail</label>
+      <input type="email" id="esqueci-email" placeholder="admin@clinica.com" required autocomplete="username">
+
+      <button type="submit" class="btn btn-primario" style="width:100%; margin-top:20px;">Enviar código</button>
+      <div id="esqueci-email-erro" class="form-erro"></div>
+    </form>
+
+    <p class="login-rodape"><a href="#" class="login-link" id="link-voltar-login-1">Voltar pro login</a></p>
+  </div>
+
+  <!-- Esqueci a senha — passo 2: código recebido por e-mail + nova senha -->
+  <div class="login-card" id="login-card-esqueci-codigo" style="display:none;">
+    <h1>Nova senha</h1>
+    <p class="sub" id="esqueci-codigo-sub">Digite o código de 6 dígitos que enviamos por e-mail e a sua nova senha.</p>
+
+    <form id="form-esqueci-codigo">
+      <label for="esqueci-codigo">Código de verificação</label>
+      <input type="text" id="esqueci-codigo" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required autocomplete="one-time-code">
+
+      <label for="esqueci-nova-senha">Nova senha</label>
+      <input type="password" id="esqueci-nova-senha" placeholder="Mínimo 6 caracteres" required minlength="6" autocomplete="new-password">
+
+      <label for="esqueci-confirmar-senha">Confirmar nova senha</label>
+      <input type="password" id="esqueci-confirmar-senha" placeholder="Repita a senha" required minlength="6" autocomplete="new-password">
+
+      <button type="submit" class="btn btn-primario" style="width:100%; margin-top:20px;">Redefinir senha</button>
+      <div id="esqueci-codigo-erro" class="form-erro"></div>
+      <div id="esqueci-codigo-ok" class="form-ok"></div>
+    </form>
+
+    <p class="login-rodape">Não recebeu? <a href="#" class="login-link" id="link-reenviar-codigo">Reenviar código</a></p>
+    <p class="login-rodape"><a href="#" class="login-link" id="link-voltar-login-2">Voltar pro login</a></p>
   </div>
 </div>
+
 
 <!-- ===================== PAINEL PRINCIPAL ===================== -->
 <div id="painel-principal">
@@ -1254,6 +1323,11 @@ const painelPrincipal = document.getElementById('painel-principal')
 const formLogin = document.getElementById('form-login')
 const loginErroEl = document.getElementById('login-erro')
 
+// Esqueci minha senha — os 3 "cards" que se alternam dentro de #tela-login
+const cardEntrar = document.getElementById('login-card-entrar')
+const cardEsqueciEmail = document.getElementById('login-card-esqueci-email')
+const cardEsqueciCodigo = document.getElementById('login-card-esqueci-codigo')
+
 const listaEl = document.getElementById('lista-pacientes')
 const buscaEl = document.getElementById('busca')
 
@@ -1331,6 +1405,145 @@ function entrarNoPainel(){
   painelPrincipal.style.display = 'block'
   carregarPacientes()
 }
+
+/* =====================================================================
+   ESQUECI MINHA SENHA
+   ===================================================================== */
+const formEsqueciEmail = document.getElementById('form-esqueci-email')
+const esqueciEmailErroEl = document.getElementById('esqueci-email-erro')
+const formEsqueciCodigo = document.getElementById('form-esqueci-codigo')
+const esqueciCodigoErroEl = document.getElementById('esqueci-codigo-erro')
+const esqueciCodigoOkEl = document.getElementById('esqueci-codigo-ok')
+const esqueciCodigoSubEl = document.getElementById('esqueci-codigo-sub')
+
+let emailEmRedefinicao = ''
+
+function mostrarCard(card){
+  ;[cardEntrar, cardEsqueciEmail, cardEsqueciCodigo].forEach(c => c.style.display = 'none')
+  card.style.display = 'block'
+}
+
+document.getElementById('link-esqueci-senha').addEventListener('click', (e) => {
+  e.preventDefault()
+  // Já aproveita o e-mail digitado no login, se a pessoa tiver preenchido.
+  document.getElementById('esqueci-email').value = document.getElementById('login-email').value.trim()
+  esqueciEmailErroEl.style.display = 'none'
+  mostrarCard(cardEsqueciEmail)
+})
+
+document.getElementById('link-voltar-login-1').addEventListener('click', (e) => {
+  e.preventDefault()
+  mostrarCard(cardEntrar)
+})
+
+document.getElementById('link-voltar-login-2').addEventListener('click', (e) => {
+  e.preventDefault()
+  mostrarCard(cardEntrar)
+})
+
+// Passo 1: pede o e-mail e dispara o código de 6 dígitos por e-mail.
+formEsqueciEmail.addEventListener('submit', async (e) => {
+  e.preventDefault()
+  esqueciEmailErroEl.style.display = 'none'
+
+  const email = document.getElementById('esqueci-email').value.trim()
+  const botao = formEsqueciEmail.querySelector('button[type="submit"]')
+
+  try{
+    botao.disabled = true
+    botao.textContent = 'Enviando...'
+
+    // Essa rota sempre responde "ok" mesmo se o e-mail não existir — é de
+    // propósito (não revela quais e-mails estão cadastrados) — por isso a
+    // seguir pro passo 2 é o comportamento certo mesmo sem confirmação de
+    // que o e-mail existe de fato.
+    await requisicao('/autenticacao/esqueci-senha', {
+      method: 'POST',
+      body: JSON.stringify({ identificador: email })
+    })
+
+    emailEmRedefinicao = email
+    esqueciCodigoSubEl.textContent = `Digite o código de 6 dígitos enviado para ${email} e a sua nova senha.`
+    formEsqueciCodigo.reset()
+    esqueciCodigoErroEl.style.display = 'none'
+    esqueciCodigoOkEl.style.display = 'none'
+    mostrarCard(cardEsqueciCodigo)
+    mostrarToast('Se o e-mail existir, enviamos um código.')
+  }catch(err){
+    esqueciEmailErroEl.textContent = err.message
+    esqueciEmailErroEl.style.display = 'block'
+  }finally{
+    botao.disabled = false
+    botao.textContent = 'Enviar código'
+  }
+})
+
+// Passo 2: confere o código e grava a senha nova (já em hash, no backend).
+formEsqueciCodigo.addEventListener('submit', async (e) => {
+  e.preventDefault()
+  esqueciCodigoErroEl.style.display = 'none'
+  esqueciCodigoOkEl.style.display = 'none'
+
+  const codigo = document.getElementById('esqueci-codigo').value.trim()
+  const novaSenha = document.getElementById('esqueci-nova-senha').value
+  const confirmarSenha = document.getElementById('esqueci-confirmar-senha').value
+
+  if(novaSenha !== confirmarSenha){
+    esqueciCodigoErroEl.textContent = 'As senhas não coincidem.'
+    esqueciCodigoErroEl.style.display = 'block'
+    return
+  }
+  if(novaSenha.length < 6){
+    esqueciCodigoErroEl.textContent = 'A nova senha deve ter pelo menos 6 caracteres.'
+    esqueciCodigoErroEl.style.display = 'block'
+    return
+  }
+
+  const botao = formEsqueciCodigo.querySelector('button[type="submit"]')
+
+  try{
+    botao.disabled = true
+    botao.textContent = 'Redefinindo...'
+
+    await requisicao('/autenticacao/redefinir-senha', {
+      method: 'POST',
+      body: JSON.stringify({ email: emailEmRedefinicao, codigo, novaSenha })
+    })
+
+    esqueciCodigoOkEl.textContent = 'Senha redefinida! Você já pode entrar com a senha nova.'
+    esqueciCodigoOkEl.style.display = 'block'
+    mostrarToast('Senha redefinida com sucesso.')
+
+    setTimeout(() => {
+      document.getElementById('login-email').value = emailEmRedefinicao
+      document.getElementById('login-senha').value = ''
+      mostrarCard(cardEntrar)
+      document.getElementById('login-senha').focus()
+    }, 1200)
+  }catch(err){
+    esqueciCodigoErroEl.textContent = err.message
+    esqueciCodigoErroEl.style.display = 'block'
+  }finally{
+    botao.disabled = false
+    botao.textContent = 'Redefinir senha'
+  }
+})
+
+// Reenvia o código de 6 dígitos, reaproveitando a mesma rota do cadastro
+// (/reenviar-codigo já aceita tipo "redefinir_senha").
+document.getElementById('link-reenviar-codigo').addEventListener('click', async (e) => {
+  e.preventDefault()
+  if(!emailEmRedefinicao) return
+  try{
+    await requisicao('/autenticacao/reenviar-codigo', {
+      method: 'POST',
+      body: JSON.stringify({ email: emailEmRedefinicao, tipo: 'redefinir_senha' })
+    })
+    mostrarToast('Código reenviado.')
+  }catch(err){
+    mostrarToast(err.message)
+  }
+})
 
 function encerrarSessao(){
   token = null
