@@ -821,11 +821,15 @@
     </form>
 
     <p class="login-rodape"><a href="#" class="login-link" id="link-esqueci-senha">Esqueci minha senha</a></p>
-    <p class="login-rodape">Acesso restrito</p>
+    <p class="login-rodape">Acesso restrito à equipe do consultório</p>
   </div>
 
   <!-- Esqueci a senha — passo 1: informar o e-mail da conta -->
   <div class="login-card" id="login-card-esqueci-email" style="display:none;">
+    <div class="login-logo">
+      <img src="frontend/assets/logo.png" alt="Logo da clínica" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <span class="logo-fallback">🏥</span>
+    </div>
     <h1>Esqueci minha senha</h1>
     <p class="sub">Informe o e-mail da sua conta de consultório. Enviaremos um código de verificação.</p>
 
@@ -842,6 +846,10 @@
 
   <!-- Esqueci a senha — passo 2: código recebido por e-mail + nova senha -->
   <div class="login-card" id="login-card-esqueci-codigo" style="display:none;">
+    <div class="login-logo">
+      <img src="frontend/assets/logo.png" alt="Logo da clínica" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <span class="logo-fallback">🏥</span>
+    </div>
     <h1>Nova senha</h1>
     <p class="sub" id="esqueci-codigo-sub">Digite o código de 6 dígitos que enviamos por e-mail e a sua nova senha.</p>
 
