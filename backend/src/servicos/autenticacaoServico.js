@@ -233,7 +233,7 @@ async function reenviarCodigo({ email, tipo }) {
   const emailNormalizado = email.trim().toLowerCase();
 
   const resultado = await bancoDados.query(
-    "SELECT paciente_id, perfil FROM usuarios WHERE email = $1",
+    "SELECT paciente_id, perfil, nome FROM usuarios WHERE email = $1",
     [emailNormalizado]
   );
 
@@ -263,7 +263,7 @@ async function solicitarRedefinicaoSenha({ identificador }) {
   const somenteDigitos = identificadorNormalizado.replace(/\D/g, "");
 
   const resultado = await bancoDados.query(
-    `SELECT u.email, u.paciente_id, u.perfil
+    `SELECT u.email, u.paciente_id, u.perfil, u.nome
        FROM usuarios u
        LEFT JOIN pacientes p ON p.id = u.paciente_id
       WHERE u.email = $1 OR (p.cpf IS NOT NULL AND regexp_replace(p.cpf, '\\D', '', 'g') = $2)
@@ -325,11 +325,20 @@ async function redefinirSenha({ email, codigo, novaSenha }) {
 }
 
 async function buscarNomeParaEmail(email, usuarioLinha) {
-  if (usuarioLinha.perfil !== "cliente" || !usuarioLinha.paciente_id) return undefined;
-  const resultado = await bancoDados.query("SELECT nome FROM pacientes WHERE id = $1", [
-    usuarioLinha.paciente_id,
-  ]);
-  return resultado.rows[0]?.nome;
+  // Perfil 'cliente': o nome de verdade mora no cadastro do paciente
+  // vinculado, não na própria linha de usuários.
+  if (usuarioLinha.perfil === "cliente") {
+    if (!usuarioLinha.paciente_id) return undefined;
+    const resultado = await bancoDados.query("SELECT nome FROM pacientes WHERE id = $1", [
+      usuarioLinha.paciente_id,
+    ]);
+    return resultado.rows[0]?.nome;
+  }
+
+  // Perfil 'admin' (médico/consultório): usa o nome cadastrado na própria
+  // conta (coluna usuarios.nome). Fica undefined até alguém preencher —
+  // nesse caso o e-mail cai de volta pra saudação genérica "Olá!".
+  return usuarioLinha.nome || undefined;
 }
 
 function mascararEmail(email) {
